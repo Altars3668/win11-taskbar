@@ -13,7 +13,7 @@ schemas/gschemas.compiled: schemas/*.gschema.xml
 # Copy into place — what a user wants.
 install: schemas
 	mkdir -p $(EXTDIR)
-	cp -r metadata.json extension.js prefs.js stylesheet.css lib schemas $(EXTDIR)/
+	cp -r metadata.json extension.js prefs.js stylesheet.css lib schemas assets $(EXTDIR)/
 
 # Symlink into place — what a developer wants.
 link: schemas
@@ -30,7 +30,7 @@ test: schemas
 pack: schemas
 	rm -f $(UUID).shell-extension.zip
 	zip -r $(UUID).shell-extension.zip \
-	    metadata.json extension.js prefs.js stylesheet.css lib schemas \
+	    metadata.json extension.js prefs.js stylesheet.css lib schemas assets \
 	    README.md docs -x 'schemas/gschemas.compiled'
 
 .PHONY: enable disable

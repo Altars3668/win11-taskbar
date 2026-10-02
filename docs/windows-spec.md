@@ -210,6 +210,36 @@ The second measured the Settings app, because an earlier `ms-settings:`
 call had left a window covering the sample point — kill `SystemSettings`
 first. Both failures look like a successful measurement of something.
 
+## The acrylic material, and control elevation
+
+Two things were measured off the real flyout that no amount of CSS
+guesswork would have landed.
+
+**The acrylic recipe** is four layers, not two: a blurred backdrop, a
+luminosity blend, a tint, and a noise tile. The noise is the one people
+notice without being able to name it — it is what stops a blurred panel
+reading as flat plastic — and it cannot be approximated with a colour. The
+tile is 128x128 at about 2% opacity.
+
+**Control elevation** is the border, and it is not uniform. Scanning down
+a button in the Wi-Fi flyout at x=1755:
+
+```
+y=735  panel background  rgb(223,217,217)
+y=736  top border        rgb(210,204,204)   13/223 darker  → alpha 0.058
+y=737  fill              rgb(246,244,244)
+...
+y=767  bottom border     rgb(187,183,185)   36/223 darker  → alpha 0.161
+y=768  panel background  rgb(223,218,220)
+```
+
+The bottom edge is roughly three times darker than the top: light falling
+from above. Those two alphas land on Microsoft's published
+`ControlStrokeColorDefault` (0.0588) and `ControlStrokeColorSecondary`
+(0.161), so this measurement confirms the documented values rather than
+replacing them — but it is the reason a flat-filled rectangle never looks
+like a Fluent control no matter what colour it is.
+
 ## Timings (registry)
 
 | Key | Value | Meaning |

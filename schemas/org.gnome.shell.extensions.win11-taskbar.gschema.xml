@@ -159,6 +159,20 @@
       with the top bar hidden these have to live here.</description>
     </key>
 
+    <key name="quick-settings-editable" type="b">
+      <default>true</default>
+      <summary>Allow editing the quick settings panel</summary>
+      <description>Adds the edit button Windows has, for choosing which
+      tiles the panel shows.</description>
+    </key>
+
+    <key name="quick-settings-hidden" type="as">
+      <default>[]</default>
+      <summary>Quick settings tiles removed from the panel</summary>
+      <description>Keyed by the tile's class and title. Edit the panel
+      from its own edit button rather than by hand.</description>
+    </key>
+
     <key name="tray-hidden-items" type="as">
       <default>[]</default>
       <summary>Tray items folded into the overflow</summary>

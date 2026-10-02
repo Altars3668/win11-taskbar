@@ -17,6 +17,7 @@ import {Taskbar} from './lib/panel.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
+import {setGettext as setEditorGettext} from './lib/quickSettingsEditor.js';
 import {cleanup as cleanupTheme, setExtensionSettings} from './lib/theme.js';
 
 export default class Win11TaskbarExtension extends Extension {
@@ -25,6 +26,7 @@ export default class Win11TaskbarExtension extends Extension {
         setMenuGettext(_);
         setStartGettext(_);
         setTrayGettext(_);
+        setEditorGettext(_);
 
         this._settings = this.getSettings();
         setExtensionSettings(this._settings);

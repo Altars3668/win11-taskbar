@@ -122,21 +122,36 @@ reserving space so windows run under the bar.
 
 Being straight about the gaps:
 
-* **No system tray icons.** GNOME has no XEmbed tray; status icons come from
-  the AppIndicator protocol. Install
-  [AppIndicator Support](https://extensions.gnome.org/extension/615/appindicator-support/)
-  for those — this extension does not try to host them.
-* **No drag-to-reorder.** Windows lets you drag task buttons around. Pinned
-  order currently follows GNOME's favourites list, which you can reorder from
-  the app grid.
+* **The Start menu matches an Insider build.** The machine measured runs
+  build 29671, whose Start menu is the new 832-wide, 8-column design
+  rather than the shipping 640/6. If you want the familiar proportions,
+  change `START_MENU` in `lib/spec.js` — the layout reads from it.
+* **The flyouts' contents are GNOME's.** Their frames, sizes, margins,
+  elevation and accent are measured from Windows; the controls inside are
+  GNOME's, because they are NetworkManager, UPower and the mixer. The
+  tile grid also keeps GNOME's two columns: at 361px, three leave no room
+  for a label.
+* **No drag-to-reorder.** Windows lets you drag task buttons around.
+  Pinned order follows GNOME's favourites, which you can reorder from the
+  app grid; quick settings tiles are added and removed from the panel's
+  own edit mode rather than dragged.
 * **No search box or widgets panel.** They have no GNOME equivalent worth
-  faking, so the zones they would occupy are simply empty.
+  faking, so the zones they would occupy are empty.
 * **Hover and pressed fills are not measured.** Pointer injection on the
-  measurement machine was blocked by UIPI, so these two colours come from the
-  published Fluent palette instead. Everything else is measured.
+  measurement machine was blocked by UIPI, so those two colours come from
+  the published Fluent palette. Everything else — including the elevation
+  border alphas — is measured.
 * **Multi-window stacking is approximate.** Every app on the measurement
-  machine had one window, so the visual for a group of two or more was never
-  captured.
+  machine had one window, so the visual for a group of two or more was
+  never captured.
+* **Conflicts with AppIndicator Support.** Only one process can own
+  `org.kde.StatusNotifierWatcher`. If that extension is enabled it wins
+  and this taskbar shows no tray icons — the log says so plainly. You do
+  not need both: this is a full host, not a client of that one.
+* **The acrylic needs something behind it.** Blurring a flat colour gives
+  the same flat colour, so over a plain desktop background the bar looks
+  solid however correct the material is. It earns its keep over a
+  wallpaper or a window.
 
 ## Install
 
