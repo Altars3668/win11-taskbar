@@ -1,0 +1,6 @@
+{
+  "name": "win11-taskbar",
+  "private": true,
+  "type": "module",
+  "description": "Not an npm package. This file only tells node that the .js files here are ES modules, so tools/test-semantics.mjs can import lib/ directly."
+}

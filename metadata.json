@@ -1,0 +1,10 @@
+{
+  "uuid": "win11-taskbar@altarscn.com",
+  "name": "Windows 11 Taskbar",
+  "description": "A GNOME Shell taskbar that reproduces Windows 11 taskbar behaviour and metrics, measured pixel-by-pixel from a real Windows 11 machine. Combined task buttons with 6px/18px pill indicators, Windows click semantics, hover thumbnail previews, jump lists and a three-zone layout.",
+  "shell-version": ["48", "49", "50"],
+  "url": "https://git.altarscn.com/Geoffrey/win11-taskbar",
+  "settings-schema": "org.gnome.shell.extensions.win11-taskbar",
+  "gettext-domain": "win11-taskbar",
+  "version-name": "0.1.0"
+}

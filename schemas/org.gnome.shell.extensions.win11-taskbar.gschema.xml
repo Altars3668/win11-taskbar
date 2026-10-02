@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="win11-taskbar">
+  <enum id="org.gnome.shell.extensions.win11-taskbar.position">
+    <value value="0" nick="bottom"/>
+    <value value="1" nick="top"/>
+  </enum>
+  <enum id="org.gnome.shell.extensions.win11-taskbar.alignment">
+    <value value="0" nick="center"/>
+    <value value="1" nick="left"/>
+  </enum>
+
+  <schema id="org.gnome.shell.extensions.win11-taskbar"
+          path="/org/gnome/shell/extensions/win11-taskbar/">
+
+    <key name="position" enum="org.gnome.shell.extensions.win11-taskbar.position">
+      <default>'bottom'</default>
+      <summary>Taskbar edge</summary>
+      <description>Which screen edge the taskbar sits on.</description>
+    </key>
+
+    <key name="alignment" enum="org.gnome.shell.extensions.win11-taskbar.alignment">
+      <default>'center'</default>
+      <summary>Task button alignment</summary>
+      <description>Centre matches Windows 11; left matches Windows 10.</description>
+    </key>
+
+    <key name="auto-hide" type="b">
+      <default>false</default>
+      <summary>Automatically hide the taskbar</summary>
+      <description>When set, the taskbar no longer reserves screen space.</description>
+    </key>
+
+    <key name="multi-monitor" type="b">
+      <default>true</default>
+      <summary>Show on every display</summary>
+      <description>Windows shows the taskbar on all displays by default.</description>
+    </key>
+
+    <key name="isolate-monitors" type="b">
+      <default>false</default>
+      <summary>Only show windows from this display</summary>
+      <description>Each taskbar lists only the windows on its own display.</description>
+    </key>
+
+    <key name="isolate-workspaces" type="b">
+      <default>true</default>
+      <summary>Only show windows from the current workspace</summary>
+      <description>Matches the Windows virtual-desktop default.</description>
+    </key>
+
+    <key name="show-pinned" type="b">
+      <default>true</default>
+      <summary>Show pinned apps</summary>
+      <description>Pinned apps keep a button even when they are not running.</description>
+    </key>
+
+    <key name="hide-top-panel" type="b">
+      <default>true</default>
+      <summary>Hide the GNOME top bar</summary>
+      <description>Windows has a single bar; hiding the top bar matches that.</description>
+    </key>
+
+    <key name="show-start-button" type="b">
+      <default>true</default>
+      <summary>Show the Start button</summary>
+    </key>
+
+    <key name="show-task-view-button" type="b">
+      <default>true</default>
+      <summary>Show the Task View button</summary>
+    </key>
+
+    <key name="show-clock" type="b">
+      <default>true</default>
+      <summary>Show the clock</summary>
+    </key>
+
+    <key name="show-desktop-button" type="b">
+      <default>true</default>
+      <summary>Show the "show desktop" sliver</summary>
+    </key>
+
+    <key name="clock-24-hour" type="b">
+      <default>true</default>
+      <summary>Use a 24-hour clock</summary>
+    </key>
+
+    <key name="clock-show-seconds" type="b">
+      <default>false</default>
+      <summary>Show seconds in the clock</summary>
+    </key>
+
+    <key name="clock-date-format" type="s">
+      <default>'%Y/%-m/%-d'</default>
+      <summary>strftime format for the clock's second line</summary>
+    </key>
+
+    <key name="aero-peek" type="b">
+      <default>true</default>
+      <summary>Peek at a window when hovering its thumbnail</summary>
+      <description>Fades the other windows out, as Aero Peek does.</description>
+    </key>
+
+    <key name="acrylic" type="b">
+      <default>true</default>
+      <summary>Blur the desktop behind the taskbar</summary>
+      <description>Approximates the acrylic material Windows uses.</description>
+    </key>
+
+    <key name="debug-service" type="b">
+      <default>false</default>
+      <summary>Expose a read-only D-Bus service for geometry tests</summary>
+      <description>Used by tools/verify-geometry.py to diff the rendered
+      taskbar against the Windows measurements.</description>
+    </key>
+
+    <key name="jumplist-recent" type="b">
+      <default>true</default>
+      <summary>Show recent documents in the jump list</summary>
+    </key>
+  </schema>
+</schemalist>

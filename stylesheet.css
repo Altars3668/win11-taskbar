@@ -1,0 +1,227 @@
+/* stylesheet.css — Windows 11 taskbar appearance.
+ *
+ * Lengths here mirror lib/spec.js, which records the measurements taken from
+ * a real Windows 11 taskbar. St resolves CSS px against the scale factor, so
+ * these stay in logical pixels.
+ *
+ * St has no CSS transitions: anything that animates is eased from JS.
+ */
+
+/* ------------------------------------------------------------------ panel */
+
+.w11-taskbar {
+    /* Measured: 48px tall. The translucent fill approximates the acrylic
+       surface; the blur behind it is applied from JS. */
+    background-color: rgba(243, 243, 243, 0.85);
+    color: #1a1a1a;
+}
+
+.w11-taskbar.dark {
+    background-color: rgba(32, 32, 32, 0.85);
+    color: #ffffff;
+}
+
+/* Measured: a single 1px separator line along the inner edge, drawn over the
+   48px band so the buttons keep their full measured height. */
+.w11-separator {
+    background-color: rgb(181, 181, 180);
+}
+
+.dark .w11-separator {
+    background-color: rgb(46, 46, 46);
+}
+
+/* Measured: the left zone starts 6px from the screen edge. */
+.w11-zone-left {
+    padding-left: 6px;
+}
+
+.w11-zone-right {
+    padding-right: 0;
+}
+
+/* ----------------------------------------------------------- task buttons */
+
+.w11-task-button {
+    /* The 44x48 cell is set from JS; no padding, buttons touch each other. */
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+}
+
+/* The plate is the thing that lights up, inset inside the cell with the
+   Fluent ControlCornerRadius. */
+.w11-task-plate {
+    margin: 2px;
+    border-radius: 4px;
+    background-color: transparent;
+}
+
+/* Fluent SubtleFillColorSecondary / Tertiary. Our screen grabs could not
+   capture a hover state (input injection was blocked by UIPI on the
+   measurement machine), so these two come from the Fluent palette rather
+   than from measurement. */
+.w11-task-button:hover .w11-task-plate {
+    background-color: rgba(0, 0, 0, 0.0605);
+}
+
+.w11-task-button:active .w11-task-plate,
+.w11-task-button:checked .w11-task-plate {
+    background-color: rgba(0, 0, 0, 0.0419);
+}
+
+.dark .w11-task-button:hover .w11-task-plate {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+.dark .w11-task-button:active .w11-task-plate,
+.dark .w11-task-button:checked .w11-task-plate {
+    background-color: rgba(255, 255, 255, 0.0605);
+}
+
+.w11-task-button:focus .w11-task-plate {
+    border: 2px solid rgb(0, 120, 212);
+}
+
+/* Windows hints at a second window by peeking a stacked plate out from
+   behind the button. */
+.w11-task-multi .w11-task-plate {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.w11-task-icon {
+    /* Measured: 24x24 nominal, centred in the 44x48 cell. */
+    icon-size: 24px;
+}
+
+/* ------------------------------------------------------------- indicator */
+
+/* Measured: 3px tall, 5px above the bottom edge, 6px wide when running and
+   18px wide when focused; the width is eased from JS. Colours sampled from
+   the screen: rgb(121,120,124) inactive, rgb(0,120,212) focused. */
+.w11-task-indicator {
+    background-color: rgb(121, 120, 124);
+    border-radius: 2px;
+}
+
+.w11-task-indicator:active {
+    background-color: rgb(0, 120, 212);
+}
+
+.dark .w11-task-indicator {
+    background-color: rgb(154, 153, 150);
+}
+
+.dark .w11-task-indicator:active {
+    background-color: rgb(76, 194, 255);
+}
+
+/* ---------------------------------------------------------- shell buttons */
+
+.w11-shell-button {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+.w11-shell-button:hover {
+    background-color: rgba(0, 0, 0, 0.0605);
+    border-radius: 4px;
+}
+
+.dark .w11-shell-button:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+/* Measured: the clock is a 62px cell with two stacked lines. */
+.w11-clock {
+    padding: 0 8px;
+}
+
+.w11-clock-time,
+.w11-clock-date {
+    font-size: 11px;
+    text-align: center;
+}
+
+.w11-clock-date {
+    padding-top: 1px;
+}
+
+/* Measured: a 12px sliver at the far right, separated by a hairline. */
+.w11-show-desktop {
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .w11-show-desktop {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* -------------------------------------------------------- preview flyout */
+
+.w11-preview {
+    background: none;
+}
+
+.w11-preview-box {
+    background-color: rgba(243, 243, 243, 0.92);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 8px;
+    spacing: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.dark .w11-preview-box {
+    background-color: rgba(44, 44, 44, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.w11-thumb {
+    padding: 4px;
+    border-radius: 6px;
+    background-color: transparent;
+}
+
+.w11-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.0605);
+}
+
+.dark .w11-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+.w11-thumb-header {
+    spacing: 6px;
+    padding-bottom: 4px;
+}
+
+.w11-thumb-title {
+    font-size: 11px;
+    max-width: 150px;
+}
+
+.w11-thumb-close {
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.w11-thumb-close:hover {
+    background-color: rgb(196, 43, 28);
+    color: #ffffff;
+}
+
+.w11-thumb-content {
+    border-radius: 4px;
+}
+
+/* ------------------------------------------------------------- jump list */
+
+.w11-jumplist .popup-menu-content {
+    border-radius: 8px;
+    padding: 4px;
+}
