@@ -64,8 +64,11 @@ tray rather than reimplemented, because hiding the top bar would otherwise
 take the volume slider with it. It is put back untouched on disable.
 
 **Start menu.** A floating panel above the Start button with a search box,
-the pinned grid, an "All apps" list, recent documents under "Recommended",
-and a footer with the account and a power menu. The Super key opens it
+the pinned grid, recent documents under "Recommended", and a footer with
+the real account avatar, shortcuts to Files and Settings, and a power menu
+— the row Windows calls Start folders. "All apps" lists GNOME's app folders
+as expandable groups first, the way the classic Start menu grouped
+programs, then every app under a letter heading. The Super key opens it
 instead of the Overview. Right-clicking a tile pins or unpins it.
 
 Measured like everything else: 832 x 864, 13px above the taskbar, an
@@ -79,29 +82,36 @@ the only way to open it from a script.
 saying because Windows 10 did not: quick settings opens from the
 network/volume/battery glyphs, the notification centre from the clock.
 
-Both are measured — quick settings and its sub-pages are 361 x 408, the
-notification centre 338 wide running nearly the full screen height, both
-12px from the right edge — and both are placed accordingly, with no pointer
-arrow, the taskbar's acrylic, and Windows' accent on active tiles.
-
-Their *contents* stay GNOME's, deliberately. The Wi-Fi list, Bluetooth,
-volume and brightness are NetworkManager, UPower and the mixer; a
+*Quick settings* is GNOME's own panel, restyled and re-placed: measured at
+361 x 408, anchored to the bottom-right corner rather than centred under
+its button, no pointer arrow, acrylic, Windows' accent on active tiles and
+their chevrons, and a track-and-knob slider instead of GNOME's hairline.
+Its contents stay GNOME's deliberately — the Wi-Fi list, Bluetooth, volume
+and brightness are NetworkManager, UPower and the mixer, and a
 Windows-shaped reimplementation of those would be worse at the part that
-matters. Tiles with a sub-page (Wi-Fi, audio output) open it the way
-Windows opens its Wi-Fi list.
+matters. Tiles with a sub-page open it the way Windows opens its Wi-Fi
+list.
+
+*The notification centre* is ours: notifications above, calendar below, in
+a 338-wide column down the right edge, which is Windows' arrangement.
+GNOME's date menu puts the two side by side and lives in the top bar we
+hide, and a menu cannot open from a hidden actor — so this one builds its
+own panel out of the same widgets the date menu uses.
 
 **Appearance.** Light or dark, either following the desktop or pinned
-independently. The surface is acrylic: a translucent fill over a real blur.
+independently. One type scale (14/12/11, three levels and no more), one set
+of icon sizes, 4px spacing steps, and one surface definition shared by every
+flyout — which is what keeps them looking like one thing. The surface is acrylic: a translucent fill over a real blur.
 The opacity is derived rather than guessed — sampling one row of the real
 taskbar gave a spread of about 30 per channel, which against a wallpaper
 varying by ~100 puts the fill at **alpha 0.70**. An 0.85 fill, which is what
 it looks like at a glance, reads as flat grey.
 
-The Start, Task View, overflow, close and power glyphs are drawn with cairo
-rather than shipped as SVG files, so their colour comes from the stylesheet
-on every repaint. (An SVG loaded through `Gio.FileIcon` is never recoloured
-by St, whatever its file name — `currentColor` falls through to black and
-the glyph disappears on a dark bar.)
+Icons are the stock Adwaita symbolic set at their native 16px. They were
+briefly drawn by hand to match Windows' own shapes, and that was a mistake:
+Adwaita's strokes are drawn for a 16px grid, so anything larger thickens
+them, and hand-drawn shapes next to stock ones never quite match. App icons
+stay at the measured 24px, tray glyphs at 16px.
 
 **Also:** a two-line clock, the 12px show-desktop sliver with Windows'
 minimise/restore toggle, per-workspace window filtering (the Windows
@@ -240,6 +250,8 @@ gdbus call --session --dest org.gnome.Shell.Extensions.Win11Taskbar \
 | `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |
 | `lib/systemFlyouts.js` | Quick settings and the notification centre. |
 | `lib/theme.js` | Light/dark, followed or pinned. |
+| `lib/motion.js` | Durations and curves, and reduce-motion. |
+| `lib/notificationCentre.js` | Notifications and the calendar. |
 | `lib/startMenu.js` | The Start menu. |
 | `lib/superKey.js` | Making Super open it instead of the Overview. |
 | `lib/statusNotifier.js` | The StatusNotifierItem watcher and host. |

@@ -110,8 +110,9 @@ export default class Win11TaskbarExtension extends Extension {
             return;
 
         if (shouldHide) {
-            // Hiding the panelBox (rather than the panel) also drops its
-            // strut, so windows get the space back.
+            // Plain hide() is fine now: nothing we need lives in the top
+            // bar any more. The notification centre used to, which is why
+            // this was once a good deal more complicated.
             Main.layoutManager.panelBox.hide();
             this._topPanelHidden = true;
         } else {
