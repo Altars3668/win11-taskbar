@@ -133,6 +133,14 @@
       pointer, as Win+V does.</description>
     </key>
 
+    <key name="clipboard-paste" type="b">
+      <default>true</default>
+      <summary>Paste the chosen entry</summary>
+      <description>Types the paste shortcut into the window that had
+      focus, as Windows does. Turn off to only put it on the clipboard.
+      Terminals get Ctrl+Shift+V.</description>
+    </key>
+
     <key name="clipboard-pinned" type="as">
       <default>[]</default>
       <summary>Pinned clipboard entries</summary>

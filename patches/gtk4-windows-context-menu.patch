@@ -1,0 +1,48 @@
+Context menus: ignore the release that opened the menu
+
+GtkModelButton treats an unpaired release — one with no matching press,
+which is exactly the release of the press that opened the menu — as a
+click. That is the X11 press-drag-release model: one press opens the
+menu and selects from it.
+
+Windows uses two steps. Releasing opens the menu and leaves it there; a
+second, separate click chooses. GTK4 has no equivalent of GTK3's 500ms
+guard, so the surprise is unconditional here.
+
+Ignoring unpaired releases gives the Windows model. Ordinary clicks on
+menu items, which do have a matching press, are unaffected, and so is
+keyboard activation.
+
+Applies to: gtk4 4.22.4
+
+--- a/gtk/gtkmodelbutton.c
++++ b/gtk/gtkmodelbutton.c
+@@ -1533,8 +1533,26 @@
+                           GdkEventSequence *sequence,
+                           GtkWidget        *widget)
+ {
+-  if (gtk_widget_contains (widget, x, y))
+-    g_signal_emit (widget, signals[SIGNAL_CLICKED], 0);
++  /* An unpaired release is the release of the press that opened this
++   * menu: the pointer was elsewhere when the button went down. GTK
++   * treats it as a choice, which is the X11 press-drag-release model —
++   * one press opens the menu and selects from it.
++   *
++   * Windows takes two steps. Releasing opens the menu and leaves it
++   * there; a second, separate click chooses. Someone arriving from
++   * Windows lets go as soon as the menu appears and lands on whatever
++   * item is under the pointer.
++   *
++   * Ignoring unpaired releases gives the Windows model. Ordinary clicks
++   * on menu items do have a matching press and are unaffected, as is
++   * keyboard activation.
++   */
++  (void) gesture;
++  (void) x;
++  (void) y;
++  (void) button;
++  (void) sequence;
++  (void) widget;
+ }
+ 
+ static void

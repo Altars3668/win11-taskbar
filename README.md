@@ -167,17 +167,20 @@ Being straight about the gaps:
   `org.kde.StatusNotifierWatcher`. If that extension is enabled it wins
   and this taskbar shows no tray icons — the log says so plainly. You do
   not need both: this is a full host, not a client of that one.
-* **Release-timed context menus only apply to this extension.** Every
-  menu it owns — task buttons, Start, tray icons — waits for the button
-  to come back up. It cannot change that for anything else: a menu
-  inside Edge, Firefox or any GTK or Qt application is opened by that
-  application's own toolkit, in its own process, and no shell extension
-  reaches into it. GTK opens context menus on press and offers no setting
-  to change it.
-* **Clipboard history cannot paste for you.** Choosing an entry puts it
-  on the clipboard; typing it into the focused window would need
-  synthetic input, which Wayland does not give an extension. It is also
-  polled, because GNOME has no clipboard-changed signal.
+* **Release-timed context menus need a GTK patch to go system-wide.**
+  Every menu this extension owns already waits for the release, and so
+  do GNOME Shell's own. But a menu inside a GTK application belongs to
+  GTK, in that application's process. `patches/` has the two small
+  changes that give GTK3 and GTK4 the Windows model, with an
+  explanation of exactly what differs; they have to be built and
+  installed separately. Chromium and Firefox draw their own menus and
+  are unaffected by either.
+* **Clipboard history is polled**, because GNOME has no
+  clipboard-changed signal. It does paste for you: the shell is the
+  compositor, so Clutter will hand out a virtual input device — the same
+  one the on-screen keyboard uses — and the keystroke goes out after the
+  grab is released, into the window that had focus. Terminals get
+  Ctrl+Shift+V.
 * **The acrylic needs something behind it.** Blurring a flat colour gives
   the same flat colour, so over a plain desktop background the bar looks
   solid however correct the material is. It earns its keep over a

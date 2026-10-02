@@ -1,0 +1,33 @@
+Context menus: do not select the item the button is released over
+
+GTK's menus follow the X11 press-drag-release model: pressing opens the
+menu and releasing over an item chooses it, so one press completes the
+selection. Windows uses two steps — releasing opens the menu and leaves
+it there, and a second, separate click chooses.
+
+Someone arriving from Windows lets go of the right button as soon as the
+menu appears and lands on whatever item is under the pointer. GTK3
+already guards the first 500ms against exactly this, which is an
+admission that the model surprises people; this raises the guard past
+any plausible press so that release never selects. Dragging inside an
+already-open menu is unaffected.
+
+Applies to: gtk+3.0 3.24.52
+
+--- a/gtk/gtkmenushell.c
++++ b/gtk/gtkmenushell.c
+@@ -84,7 +84,13 @@
+ #include "ubuntu-private.h"
+ 
+ 
+-#define MENU_SHELL_TIMEOUT   500
++/* Windows opens a context menu on release and leaves it there; the
++ * release that opened it never selects anything. GTK's own guard for
++ * the first MENU_SHELL_TIMEOUT milliseconds does the same thing for a
++ * quick press-and-release, so raising it past any plausible press gives
++ * the Windows model without touching the surrounding logic.
++ */
++#define MENU_SHELL_TIMEOUT   2147483
+ #define MENU_POPUP_DELAY     225
+ #define MENU_POPDOWN_DELAY   1000
+ 
