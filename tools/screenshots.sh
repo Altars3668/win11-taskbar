@@ -67,14 +67,25 @@ gsettings --schemadir "$ROOT/schemas" \
     set org.gnome.shell.extensions.win11-taskbar tray-hidden-items \
     "[]" >/dev/null 2>&1
 
+trigger quick-settings;      shot 07-quick-settings
+trigger wifi-submenu;        shot 08-flyout-subpage
+trigger quick-settings-close
+trigger notifications;       shot 09-notification-centre
+trigger notifications-close
+
 gsettings set org.gnome.desktop.interface color-scheme prefer-dark
 sleep 2
-shot 07-dark
+shot 10-dark
+
+trigger start-menu;          shot 11-dark-start-menu
+trigger start-menu-close
+trigger quick-settings;      shot 12-dark-quick-settings
+trigger quick-settings-close
 
 gsettings --schemadir "$ROOT/schemas" \
     set org.gnome.shell.extensions.win11-taskbar alignment left
 sleep 2
-shot 08-left-aligned
+shot 13-left-aligned
 gsettings --schemadir "$ROOT/schemas" \
     set org.gnome.shell.extensions.win11-taskbar alignment center
 gsettings set org.gnome.desktop.interface color-scheme default

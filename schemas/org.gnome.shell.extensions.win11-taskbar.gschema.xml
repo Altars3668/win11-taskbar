@@ -9,6 +9,12 @@
     <value value="1" nick="left"/>
   </enum>
 
+  <enum id="org.gnome.shell.extensions.win11-taskbar.theme">
+    <value value="0" nick="auto"/>
+    <value value="1" nick="light"/>
+    <value value="2" nick="dark"/>
+  </enum>
+
   <schema id="org.gnome.shell.extensions.win11-taskbar"
           path="/org/gnome/shell/extensions/win11-taskbar/">
 
@@ -22,6 +28,13 @@
       <default>'center'</default>
       <summary>Task button alignment</summary>
       <description>Centre matches Windows 11; left matches Windows 10.</description>
+    </key>
+
+    <key name="reserve-space" type="b">
+      <default>true</default>
+      <summary>Reserve screen space for the taskbar</summary>
+      <description>When off, maximised windows run underneath the bar and
+      show through its acrylic surface.</description>
     </key>
 
     <key name="auto-hide" type="b">
@@ -99,6 +112,13 @@
       <default>true</default>
       <summary>Peek at a window when hovering its thumbnail</summary>
       <description>Fades the other windows out, as Aero Peek does.</description>
+    </key>
+
+    <key name="theme" enum="org.gnome.shell.extensions.win11-taskbar.theme">
+      <default>'auto'</default>
+      <summary>Appearance</summary>
+      <description>Follow the desktop setting, or pin the taskbar to light
+      or dark independently of it.</description>
     </key>
 
     <key name="acrylic" type="b">

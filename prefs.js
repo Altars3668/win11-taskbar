@@ -33,7 +33,11 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         placement.add(this._combo(settings, 'alignment', _('Task button alignment'),
             [['center', _('Centre (Windows 11)')], ['left', _('Left (Windows 10)')]]));
         placement.add(this._switch(settings, 'auto-hide', _('Automatically hide'),
-            _('The taskbar stops reserving screen space.')));
+            _('Slides out of the way until the pointer pushes the edge.')));
+        placement.add(this._switch(settings, 'reserve-space',
+            _('Reserve screen space'),
+            _('Turn off to let maximised windows run under the bar and show '
+              + 'through its acrylic surface.')));
         placement.add(this._switch(settings, 'hide-top-panel', _('Hide the GNOME top bar'),
             _('Windows has a single bar.')));
 
@@ -45,6 +49,12 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         monitors.add(this._switch(settings, 'isolate-workspaces',
             _('Only show windows from the current workspace'),
             _('Matches the Windows virtual-desktop default.')));
+
+        const appearance = new Adw.PreferencesGroup({title: _('Appearance')});
+        page.add(appearance);
+        appearance.add(this._combo(settings, 'theme', _('Colour scheme'),
+            [['auto', _('Follow the desktop')], ['light', _('Light')],
+             ['dark', _('Dark')]]));
 
         const parts = new Adw.PreferencesGroup({title: _('Elements')});
         page.add(parts);
@@ -118,8 +128,10 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
 
         const overflow = new Adw.PreferencesGroup({
             title: _('Overflow'),
-            description: _('Ids listed here fold behind the chevron, one ' +
-                'per line. An item asking for attention is shown anyway.'),
+            description: _('Right-click any tray icon to move it between ' +
+                'the taskbar and the overflow. The list below is what that ' +
+                'writes, comma separated; an item asking for attention is ' +
+                'shown regardless.'),
         });
         page.add(overflow);
 

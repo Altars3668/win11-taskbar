@@ -177,6 +177,39 @@ The *pair* of panels is centred on the screen — 403 to 1516 has a midpoint
 of 959.5 against a screen centre of 960 — which is worth knowing because
 it means the main panel alone is not centred.
 
+## The two system flyouts
+
+Windows 11 separates these, unlike Windows 10's single Action Centre:
+quick settings on the network/volume/battery glyphs, the notification
+centre on the clock.
+
+Neither could be opened through UIA — the tray's system glyphs did not
+expose a pattern that worked, and pointer injection is blocked. **Shell URI
+protocols open them without either**, which is the useful trick here:
+
+```powershell
+Start-Process "ms-availablenetworks:"       # quick settings, Wi-Fi sub-page
+Start-Process "ms-actioncenter:"            # notification centre
+Start-Process "ms-actioncenter:controlcenter"
+```
+
+Measured by diffing a full-screen grab against one taken before opening,
+with rows below y=1032 excluded so the taskbar's own flashing buttons could
+not widen the result:
+
+```
+quick settings   361 x 408   right edge -12px, 6px above the taskbar
+Wi-Fi sub-page   361 x 408   same frame — it is a page of the same flyout
+notification     338 wide    right edge -12px, 8px from the top,
+                 y=8..1024   7px above the taskbar
+```
+
+Two traps in this measurement. The first run diffed against a baseline that
+already had the Start menu open, so the "difference" was almost nothing.
+The second measured the Settings app, because an earlier `ms-settings:`
+call had left a window covering the sample point — kill `SystemSettings`
+first. Both failures look like a successful measurement of something.
+
 ## Timings (registry)
 
 | Key | Value | Meaning |
@@ -204,13 +237,10 @@ one window, so the visual Windows uses for a group of two or more was never
 captured. The extension approximates it with a second outline behind the
 plate.
 
-**The Quick Settings flyout.** Every attempt to open it through UIA
-failed: the tray's system glyphs expose neither `InvokePattern` nor
-`TogglePattern` in a form that worked here, and pointer injection is
-blocked. The extension restyles GNOME's own Quick Settings rather than
-reproducing a measured layout, and anchors it to the screen corner because
-that is where Windows puts it — an observation from the screen grabs, not
-a measurement of the flyout itself.
+**The flyouts' internal layouts.** Their frames are measured (below), but
+UIA could not enumerate what is inside them — `FromPoint` in the middle of
+an open flyout returned the desktop. The tile grid, slider rows and list
+rows therefore keep GNOME's arrangement.
 
 ## Reproducing
 

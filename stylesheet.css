@@ -12,12 +12,14 @@
 .w11-taskbar {
     /* Measured: 48px tall. The translucent fill approximates the acrylic
        surface; the blur behind it is applied from JS. */
-    background-color: rgba(243, 243, 243, 0.85);
+    /* alpha 0.70, derived from how much the wallpaper shows through on the
+       real taskbar — see SURFACE in lib/spec.js. 0.85 reads as flat grey. */
+    background-color: rgba(243, 243, 243, 0.70);
     color: #1a1a1a;
 }
 
 .w11-taskbar.dark {
-    background-color: rgba(32, 32, 32, 0.85);
+    background-color: rgba(32, 32, 32, 0.72);
     color: #ffffff;
 }
 
@@ -125,7 +127,13 @@
     margin: 0;
     border: none;
     background: none;
-    color: inherit;
+    /* Explicit, not inherit: St repaints our -symbolic SVGs with this
+       colour, and an unresolved inherit left them dark on the dark bar. */
+    color: #1a1a1a;
+}
+
+.dark .w11-shell-button {
+    color: #ffffff;
 }
 
 .w11-shell-button:hover {
@@ -168,7 +176,7 @@
 }
 
 .w11-preview-box {
-    background-color: rgba(249, 249, 249, 0.96);
+    background-color: rgba(249, 249, 249, 0.80);
     border: 1px solid rgba(0, 0, 0, 0.14);
     border-radius: 8px;
     padding: 8px;
@@ -180,7 +188,7 @@
 }
 
 .dark .w11-preview-box {
-    background-color: rgba(44, 44, 44, 0.96);
+    background-color: rgba(44, 44, 44, 0.82);
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #ffffff;
 }
@@ -213,6 +221,11 @@
 .w11-thumb-close {
     padding: 2px;
     border-radius: 4px;
+    color: #1a1a1a;
+}
+
+.dark .w11-thumb-close {
+    color: #ffffff;
 }
 
 .w11-thumb-close:hover {
@@ -243,7 +256,7 @@
 .w11-start-power-menu .popup-menu-content {
     border-radius: 8px;
     padding: 4px;
-    background-color: rgba(249, 249, 249, 0.98);
+    background-color: rgba(249, 249, 249, 0.82);
     border: 1px solid rgba(0, 0, 0, 0.14);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
     color: #1a1a1a;
@@ -252,7 +265,7 @@
 .w11-jumplist.dark .popup-menu-content,
 .w11-tray-menu.dark .popup-menu-content,
 .w11-start-power-menu.dark .popup-menu-content {
-    background-color: rgba(44, 44, 44, 0.98);
+    background-color: rgba(44, 44, 44, 0.84);
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #ffffff;
 }
@@ -293,6 +306,11 @@
     border: none;
     background: none;
     border-radius: 4px;
+    color: #1a1a1a;
+}
+
+.dark .w11-tray-icon {
+    color: #ffffff;
 }
 
 .w11-tray-icon:hover,
@@ -317,7 +335,7 @@
 }
 
 .w11-tray-overflow-grid {
-    background-color: rgba(249, 249, 249, 0.96);
+    background-color: rgba(249, 249, 249, 0.80);
     border: 1px solid rgba(0, 0, 0, 0.14);
     border-radius: 8px;
     padding: 9px;
@@ -326,7 +344,7 @@
 
 .w11-tray-overflow.dark .w11-tray-overflow-grid,
 .dark .w11-tray-overflow-grid {
-    background-color: rgba(44, 44, 44, 0.96);
+    background-color: rgba(44, 44, 44, 0.82);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -373,7 +391,7 @@
 }
 
 .w11-start-panel {
-    background-color: rgba(243, 243, 243, 0.96);
+    background-color: rgba(243, 243, 243, 0.82);
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 8px;
     padding: 24px;
@@ -384,7 +402,7 @@
 
 .w11-start-menu.dark .w11-start-panel,
 .dark .w11-start-panel {
-    background-color: rgba(40, 40, 40, 0.96);
+    background-color: rgba(40, 40, 40, 0.84);
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: #ffffff;
 }
@@ -527,6 +545,14 @@
     border-radius: 6px;
     padding: 8px;
     background: none;
+    color: #1a1a1a;
+}
+
+.w11-start-menu.dark .w11-start-account,
+.w11-start-menu.dark .w11-start-power,
+.dark .w11-start-account,
+.dark .w11-start-power {
+    color: #ffffff;
 }
 
 .w11-start-account:hover,
@@ -544,40 +570,155 @@
     padding: 4px;
 }
 
-/* ----------------------------------------------------- quick settings */
+/* ------------------------------------------------------ system flyouts */
 
-/* GNOME's Quick Settings flyout, restyled to match the Windows one: no
-   pointer arrow, rounded, anchored to the screen corner (done from JS),
-   and following the light/dark setting rather than always being dark. */
-.w11-quick-settings {
+/* Quick settings and the notification centre. Windows draws both as plain
+   rounded acrylic panels with no pointer arrow, anchored to a screen edge
+   (the anchoring is done from lib/systemFlyouts.js, which has the measured
+   margins). GNOME's menus are dark by default and draw an arrow. */
+.w11-flyout {
     -arrow-rise: 0;
     -arrow-base: 0;
     -arrow-border-width: 0;
 }
 
-.w11-quick-settings .popup-menu-content,
-.w11-quick-settings .quick-settings {
+.w11-flyout .popup-menu-content,
+.w11-flyout .quick-settings,
+.w11-flyout .datemenu-popover {
     border-radius: 8px;
     padding: 12px;
-    background-color: rgba(249, 249, 249, 0.98);
+    background-color: rgba(249, 249, 249, 0.82);
     border: 1px solid rgba(0, 0, 0, 0.14);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
     color: #1a1a1a;
 }
 
-.w11-quick-settings.dark .popup-menu-content,
-.w11-quick-settings.dark .quick-settings {
-    background-color: rgba(44, 44, 44, 0.98);
+.w11-flyout.dark .popup-menu-content,
+.w11-flyout.dark .quick-settings,
+.w11-flyout.dark .datemenu-popover {
+    background-color: rgba(44, 44, 44, 0.84);
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #ffffff;
 }
 
-/* Windows' quick-action tiles are rounded rectangles in a grid. */
-.w11-quick-settings .quick-toggle,
-.w11-quick-settings .quick-menu-toggle {
+/* Windows' quick-action tiles: rounded rectangles, accent fill when on.
+   A tile with a sub-page is split into the toggle and a chevron button;
+   both halves have to take the accent, or the chevron keeps the shell's
+   own colour and the tile looks half-painted. */
+.w11-flyout .quick-toggle,
+.w11-flyout .quick-toggle-has-menu,
+.w11-flyout .quick-slider,
+.w11-flyout .quick-toggle-menu-container {
     border-radius: 6px;
 }
 
-.w11-quick-settings .quick-slider {
+.w11-flyout .quick-toggle:checked,
+.w11-flyout .quick-toggle-has-menu:checked .quick-toggle,
+.w11-flyout .quick-toggle-has-menu:checked .quick-toggle-menu-button {
+    background-color: rgb(0, 120, 212);
+    color: #ffffff;
+}
+
+.w11-flyout .quick-toggle:checked:hover,
+.w11-flyout .quick-toggle-has-menu:checked .quick-toggle:hover,
+.w11-flyout .quick-toggle-has-menu:checked .quick-toggle-menu-button:hover {
+    background-color: rgb(16, 110, 190);
+}
+
+.w11-flyout .quick-toggle-has-menu:checked .quick-toggle-separator {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* The panel is 361px wide, which is narrower than the menu GNOME sizes
+   these for, so the labels need to give up some room rather than clip. */
+.w11-flyout .quick-toggle-title {
+    font-size: 11px;
+}
+
+.w11-flyout .quick-toggle-subtitle {
+    font-size: 9px;
+}
+
+.w11-flyout .quick-toggle {
+    padding-left: 8px;
+    padding-right: 4px;
+}
+
+.w11-flyout .quick-toggle-icon {
+    icon-size: 16px;
+}
+
+/* The notification centre runs down the whole right edge on Windows, with
+   the message list above and the calendar below. Measured 338 wide; the
+   width is also set from JS, but the inner columns size themselves and
+   need telling too. */
+.w11-notification-centre .popup-menu-content {
+    width: 338px;
+}
+
+.w11-notification-centre .datemenu-calendar-column,
+.w11-notification-centre .message-list {
+    width: 314px;
+    min-width: 0;
+}
+
+.w11-notification-centre .message-list,
+.w11-notification-centre .datemenu-calendar-column {
     border-radius: 6px;
+}
+
+.w11-notification-centre .message {
+    border-radius: 6px;
+}
+
+/* A tile's sub-page — the Wi-Fi list, the audio device list, the power
+   menu. Windows slides these over the flyout with a back arrow and a
+   title; GNOME overlays them in the same place, so they only need the
+   matching surface. */
+.w11-flyout .quick-toggle-menu-container,
+.w11-flyout .quick-toggle-menu {
+    border-radius: 8px;
+    background-color: rgba(249, 249, 249, 0.96);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #1a1a1a;
+}
+
+.w11-flyout.dark .quick-toggle-menu-container,
+.w11-flyout.dark .quick-toggle-menu {
+    background-color: rgba(44, 44, 44, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.w11-flyout .quick-toggle-menu .popup-menu-item {
+    border-radius: 4px;
+    color: inherit;
+}
+
+.w11-flyout .quick-toggle-menu .popup-menu-item:hover,
+.w11-flyout .quick-toggle-menu .popup-menu-item:focus {
+    background-color: rgba(0, 0, 0, 0.0605);
+}
+
+.w11-flyout.dark .quick-toggle-menu .popup-menu-item:hover,
+.w11-flyout.dark .quick-toggle-menu .popup-menu-item:focus {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+/* Windows marks the active entry in a sub-page with the accent colour. */
+.w11-flyout .quick-toggle-menu .popup-menu-item:checked {
+    background-color: rgb(0, 120, 212);
+    color: #ffffff;
+}
+
+/* Drawn glyphs read their colour from the theme node, so this is what
+   actually tints the Start, Task View, chevron, close and power shapes. */
+.w11-glyph {
+    color: #1a1a1a;
+}
+
+.dark .w11-glyph,
+.w11-start-menu.dark .w11-glyph,
+.w11-preview.dark .w11-glyph {
+    color: #ffffff;
 }

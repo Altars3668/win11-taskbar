@@ -75,17 +75,38 @@ it is 832 wide with 8 columns rather than the 640 and 6 of the shipping
 build. `docs/windows-spec.md` explains, including why `TogglePattern` is
 the only way to open it from a script.
 
-**Quick Settings.** Windows puts Wi-Fi, Bluetooth, volume and brightness in
-one flyout anchored to the bottom-right corner. GNOME has that panel
-already, backed by NetworkManager, UPower and the mixer. Rebuilding it
-would mean rebuilding all of that, so instead the real one is moved into
-the taskbar, restyled (no pointer arrow, rounded, following light/dark) and
-re-anchored to the screen corner the way Windows anchors its flyout.
+**The two system flyouts.** Windows 11 keeps these separate, which is worth
+saying because Windows 10 did not: quick settings opens from the
+network/volume/battery glyphs, the notification centre from the clock.
 
-**Also:** Task View button, a two-line clock, the 12px show-desktop sliver
-with Windows' minimise/restore toggle, per-workspace window filtering (the
-Windows virtual-desktop default), multi-monitor support, light/dark
-following the desktop preference, and an acrylic blur behind the bar.
+Both are measured — quick settings and its sub-pages are 361 x 408, the
+notification centre 338 wide running nearly the full screen height, both
+12px from the right edge — and both are placed accordingly, with no pointer
+arrow, the taskbar's acrylic, and Windows' accent on active tiles.
+
+Their *contents* stay GNOME's, deliberately. The Wi-Fi list, Bluetooth,
+volume and brightness are NetworkManager, UPower and the mixer; a
+Windows-shaped reimplementation of those would be worse at the part that
+matters. Tiles with a sub-page (Wi-Fi, audio output) open it the way
+Windows opens its Wi-Fi list.
+
+**Appearance.** Light or dark, either following the desktop or pinned
+independently. The surface is acrylic: a translucent fill over a real blur.
+The opacity is derived rather than guessed — sampling one row of the real
+taskbar gave a spread of about 30 per channel, which against a wallpaper
+varying by ~100 puts the fill at **alpha 0.70**. An 0.85 fill, which is what
+it looks like at a glance, reads as flat grey.
+
+The Start, Task View, overflow, close and power glyphs are drawn with cairo
+rather than shipped as SVG files, so their colour comes from the stylesheet
+on every repaint. (An SVG loaded through `Gio.FileIcon` is never recoloured
+by St, whatever its file name — `currentColor` falls through to black and
+the glyph disappears on a dark bar.)
+
+**Also:** a two-line clock, the 12px show-desktop sliver with Windows'
+minimise/restore toggle, per-workspace window filtering (the Windows
+virtual-desktop default), multi-monitor support, and an option to stop
+reserving space so windows run under the bar.
 
 ## What it does not do
 
@@ -155,9 +176,15 @@ tools/screenshots.sh ~/w11-shots
 ```
 
 That starts a throwaway shell on a 1920x1080 virtual monitor, launches some
-apps and tray items in it, and saves: idle, the thumbnail flyout, a jump
-list, the Start menu, All apps, the tray overflow, dark mode, and
-left-aligned. Your session is never touched.
+apps and tray items in it, and saves thirteen states: idle, the thumbnail
+flyout, a jump list, the Start menu, All apps, the tray overflow, quick
+settings, a flyout sub-page, the notification centre, the same again in
+dark, and left-aligned. Your session is never touched.
+
+Two things the headless shell cannot show you, so do not read them as
+faults: it renders no wallpaper, so the acrylic has nothing to blur; and it
+has no network device, so the Wi-Fi tile has no list to open (the sub-page
+mechanism is still exercised, by whichever tile does have one).
 
 ## Testing
 
@@ -210,6 +237,9 @@ gdbus call --session --dest org.gnome.Shell.Extensions.Win11Taskbar \
 | `lib/windowPreview.js` | The thumbnail flyout and Aero Peek. |
 | `lib/jumpList.js` | The right-click menu. |
 | `lib/shellButtons.js` | Start, Task View, clock, show-desktop. |
+| `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |
+| `lib/systemFlyouts.js` | Quick settings and the notification centre. |
+| `lib/theme.js` | Light/dark, followed or pinned. |
 | `lib/startMenu.js` | The Start menu. |
 | `lib/superKey.js` | Making Super open it instead of the Overview. |
 | `lib/statusNotifier.js` | The StatusNotifierItem watcher and host. |

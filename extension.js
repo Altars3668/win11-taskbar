@@ -16,15 +16,18 @@ import {setGettext} from './lib/jumpList.js';
 import {Taskbar} from './lib/panel.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
-import {cleanup as cleanupTheme} from './lib/theme.js';
+import {setGettext as setTrayGettext} from './lib/trayArea.js';
+import {cleanup as cleanupTheme, setExtensionSettings} from './lib/theme.js';
 
 export default class Win11TaskbarExtension extends Extension {
     enable() {
         setGettext(_);
         setMenuGettext(_);
         setStartGettext(_);
+        setTrayGettext(_);
 
         this._settings = this.getSettings();
+        setExtensionSettings(this._settings);
         this._taskbars = [];
         this._topPanelHidden = false;
 
