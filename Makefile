@@ -33,5 +33,12 @@ pack: schemas
 	    metadata.json extension.js prefs.js stylesheet.css lib schemas \
 	    README.md docs -x 'schemas/gschemas.compiled'
 
+.PHONY: enable disable
+enable: link
+	tools/enable.sh --apply
+
+disable:
+	tools/disable.sh
+
 clean:
 	rm -f schemas/gschemas.compiled $(UUID).shell-extension.zip

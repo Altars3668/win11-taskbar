@@ -108,6 +108,21 @@ gnome-extensions enable win11-taskbar@altarscn.com
 On Wayland you have to log out and back in for the shell to pick up a new
 extension; on X11, `Alt+F2` then `r` is enough.
 
+Then switch over. Several stock extensions draw their own taskbar or claim
+the tray, and only one of each can win, so there is a script that sorts it
+out and records what it turned off:
+
+```bash
+tools/enable.sh           # show what would change
+tools/enable.sh --apply   # do it
+tools/disable.sh          # undo, restoring whatever was disabled
+```
+
+It looks for Dash to Panel, Ubuntu Dock, Dash to Dock and both AppIndicator
+extensions. The AppIndicator ones matter most: only one process can own
+`org.kde.StatusNotifierWatcher`, and if one of them holds it this taskbar
+shows no tray icons.
+
 Requires GNOME Shell 48, 49 or 50.
 
 ## Settings
