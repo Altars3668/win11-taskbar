@@ -168,17 +168,21 @@
 }
 
 .w11-preview-box {
-    background-color: rgba(243, 243, 243, 0.92);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(249, 249, 249, 0.96);
+    border: 1px solid rgba(0, 0, 0, 0.14);
     border-radius: 8px;
     padding: 8px;
     spacing: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    /* Without an explicit colour the caption inherits whatever the shell
+       theme set and comes out nearly invisible on the light surface. */
+    color: #1a1a1a;
 }
 
 .dark .w11-preview-box {
-    background-color: rgba(44, 44, 44, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(44, 44, 44, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
 }
 
 .w11-thumb {
@@ -203,6 +207,7 @@
 .w11-thumb-title {
     font-size: 11px;
     max-width: 150px;
+    color: inherit;
 }
 
 .w11-thumb-close {
@@ -221,9 +226,61 @@
 
 /* ------------------------------------------------------------- jump list */
 
-.w11-jumplist .popup-menu-content {
+/* Windows' jump list follows the system light/dark setting and has no
+   pointer arrow; GNOME's menus are dark by default and draw one. The
+   `dark` class is applied per-menu from lib/theme.js, because these are
+   parented to Main.uiGroup rather than to the taskbar. */
+.w11-jumplist,
+.w11-tray-menu,
+.w11-start-power-menu {
+    -arrow-rise: 0;
+    -arrow-base: 0;
+    -arrow-border-width: 0;
+}
+
+.w11-jumplist .popup-menu-content,
+.w11-tray-menu .popup-menu-content,
+.w11-start-power-menu .popup-menu-content {
     border-radius: 8px;
     padding: 4px;
+    background-color: rgba(249, 249, 249, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    color: #1a1a1a;
+}
+
+.w11-jumplist.dark .popup-menu-content,
+.w11-tray-menu.dark .popup-menu-content,
+.w11-start-power-menu.dark .popup-menu-content {
+    background-color: rgba(44, 44, 44, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.w11-jumplist .popup-menu-item,
+.w11-tray-menu .popup-menu-item,
+.w11-start-power-menu .popup-menu-item {
+    color: inherit;
+    border-radius: 4px;
+}
+
+.w11-jumplist .popup-menu-item:hover,
+.w11-jumplist .popup-menu-item:focus,
+.w11-tray-menu .popup-menu-item:hover,
+.w11-tray-menu .popup-menu-item:focus,
+.w11-start-power-menu .popup-menu-item:hover,
+.w11-start-power-menu .popup-menu-item:focus {
+    background-color: rgba(0, 0, 0, 0.0605);
+    color: inherit;
+}
+
+.w11-jumplist.dark .popup-menu-item:hover,
+.w11-jumplist.dark .popup-menu-item:focus,
+.w11-tray-menu.dark .popup-menu-item:hover,
+.w11-tray-menu.dark .popup-menu-item:focus,
+.w11-start-power-menu.dark .popup-menu-item:hover,
+.w11-start-power-menu.dark .popup-menu-item:focus {
+    background-color: rgba(255, 255, 255, 0.0837);
 }
 
 /* --------------------------------------------------------- notification area */
@@ -260,16 +317,17 @@
 }
 
 .w11-tray-overflow-grid {
-    background-color: rgba(243, 243, 243, 0.92);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(249, 249, 249, 0.96);
+    border: 1px solid rgba(0, 0, 0, 0.14);
     border-radius: 8px;
     padding: 9px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
+.w11-tray-overflow.dark .w11-tray-overflow-grid,
 .dark .w11-tray-overflow-grid {
-    background-color: rgba(44, 44, 44, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(44, 44, 44, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* GNOME's Quick Settings, borrowed in. Its icons are sized for a 32px top
@@ -324,6 +382,7 @@
     color: #1a1a1a;
 }
 
+.w11-start-menu.dark .w11-start-panel,
 .dark .w11-start-panel {
     background-color: rgba(40, 40, 40, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -337,6 +396,7 @@
     background-color: rgba(255, 255, 255, 0.7);
 }
 
+.w11-start-menu.dark .w11-start-search, .w11-start-menu.dark .w11-start-search,
 .dark .w11-start-search {
     border: 1px solid rgba(255, 255, 255, 0.12);
     background-color: rgba(255, 255, 255, 0.05);
@@ -371,11 +431,12 @@
     background-color: rgba(0, 0, 0, 0.08);
 }
 
+.w11-start-menu.dark .w11-start-allapps, .w11-start-menu.dark .w11-start-allapps,
 .dark .w11-start-allapps {
     background-color: rgba(255, 255, 255, 0.06);
 }
 
-.dark .w11-start-allapps:hover {
+.w11-start-menu.dark .w11-start-allapps:, .dark .w11-start-allapps:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -397,7 +458,7 @@
     background-color: rgba(0, 0, 0, 0.0605);
 }
 
-.dark .w11-start-tile:hover {
+.w11-start-menu.dark .w11-start-tile:, .dark .w11-start-tile:hover {
     background-color: rgba(255, 255, 255, 0.0837);
 }
 
@@ -418,7 +479,7 @@
     background-color: rgba(0, 0, 0, 0.0605);
 }
 
-.dark .w11-start-row:hover {
+.w11-start-menu.dark .w11-start-row:, .dark .w11-start-row:hover {
     background-color: rgba(255, 255, 255, 0.0837);
 }
 
@@ -435,6 +496,7 @@
     color: rgba(0, 0, 0, 0.55);
 }
 
+.w11-start-menu.dark .w11-start-row-subtitle, .w11-start-menu.dark .w11-start-row-subtitle,
 .dark .w11-start-row-subtitle {
     color: rgba(255, 255, 255, 0.55);
 }
@@ -444,6 +506,7 @@
     color: rgba(0, 0, 0, 0.5);
 }
 
+.w11-start-menu.dark .w11-start-empty, .w11-start-menu.dark .w11-start-empty,
 .dark .w11-start-empty {
     color: rgba(255, 255, 255, 0.5);
 }
@@ -454,6 +517,7 @@
     spacing: 8px;
 }
 
+.w11-start-menu.dark .w11-start-footer, .w11-start-menu.dark .w11-start-footer,
 .dark .w11-start-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -470,12 +534,50 @@
     background-color: rgba(0, 0, 0, 0.0605);
 }
 
-.dark .w11-start-account:hover,
-.dark .w11-start-power:hover {
+.w11-start-menu.dark .w11-start-account:, .dark .w11-start-account:hover,
+.w11-start-menu.dark .w11-start-power:, .dark .w11-start-power:hover {
     background-color: rgba(255, 255, 255, 0.0837);
 }
 
 .w11-start-power-menu .popup-menu-content {
     border-radius: 8px;
     padding: 4px;
+}
+
+/* ----------------------------------------------------- quick settings */
+
+/* GNOME's Quick Settings flyout, restyled to match the Windows one: no
+   pointer arrow, rounded, anchored to the screen corner (done from JS),
+   and following the light/dark setting rather than always being dark. */
+.w11-quick-settings {
+    -arrow-rise: 0;
+    -arrow-base: 0;
+    -arrow-border-width: 0;
+}
+
+.w11-quick-settings .popup-menu-content,
+.w11-quick-settings .quick-settings {
+    border-radius: 8px;
+    padding: 12px;
+    background-color: rgba(249, 249, 249, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
+    color: #1a1a1a;
+}
+
+.w11-quick-settings.dark .popup-menu-content,
+.w11-quick-settings.dark .quick-settings {
+    background-color: rgba(44, 44, 44, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+/* Windows' quick-action tiles are rounded rectangles in a grid. */
+.w11-quick-settings .quick-toggle,
+.w11-quick-settings .quick-menu-toggle {
+    border-radius: 6px;
+}
+
+.w11-quick-settings .quick-slider {
+    border-radius: 6px;
 }

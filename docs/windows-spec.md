@@ -132,6 +132,51 @@ Tray icon buttons themselves measured 32 x 48 with a 16 x 16 glyph; the
 merged network and volume glyphs get a narrower 24 x 48 cell, the power
 glyph 54 x 48.
 
+## The Start menu
+
+This one needs a caveat before the numbers. **The measurement machine runs
+build 29671, an Insider Preview, and its Start menu is the new design** —
+832px wide with an 8-column pinned grid and a separate phone-companion
+side panel. The shipping Windows 11 Start menu is 640px with 6 columns.
+What is recorded below, and what the extension renders, is the machine in
+front of us, not the more common one.
+
+Opening it needed the right pattern. The Start button does **not** support
+`InvokePattern`, and `LegacyIAccessible` is not available on it either —
+both are what automation snippets usually reach for, and both fail. It
+supports **`TogglePattern`**:
+
+```powershell
+$btn = $trayRoot.FindFirst($Descendants, $AutomationIdIs_StartButton)
+$tp = $btn.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+if ("$($tp.Current.ToggleState)" -ne 'On') { $tp.Toggle() }
+```
+
+Read the state rather than toggling blindly: `Toggle()` flips, so a script
+that assumes the menu is closed will close it instead, and the run silently
+measures a desktop. Verify by checking what `AutomationElement::FromPoint`
+returns in the middle of the screen — "Program Manager" means the menu
+never opened.
+
+UIA could not enumerate the menu's contents even when open (walking the
+desktop's children never reached it, and `FromPoint` landed on the
+desktop), so the layout below comes from pixel analysis of the grab, using
+channel saturation to separate the coloured app icons from the grey panel.
+
+```
+main panel      x=403..1234   832 wide     y=155..1018   864 tall
+phone panel     x=1241..1516  276 wide     (6px gap, not reproduced)
+pinned icons    rows centred y=311 and y=395      → 84px row pitch
+                columns centred 480, 576, 672 … 1152 → 96px column pitch
+                icon bounding box 31px → 32px nominal
+```
+
+So: 8 columns at a 96px pitch is 768, inside an 832px panel, giving 32px
+of padding each side. The panel's bottom edge sits 13px above the taskbar.
+The *pair* of panels is centred on the screen — 403 to 1516 has a midpoint
+of 959.5 against a screen centre of 960 — which is worth knowing because
+it means the main panel alone is not centred.
+
 ## Timings (registry)
 
 | Key | Value | Meaning |
@@ -159,27 +204,13 @@ one window, so the visual Windows uses for a group of two or more was never
 captured. The extension approximates it with a second outline behind the
 plate.
 
-**The Start menu, entirely.** The machine's session locked itself between
-measurement runs (LockApp was in the foreground), and a locked session
-exposes no shell UI at all — the taskbar is gone from the window list and
-UIAutomation has nothing to walk. So every number in `START_MENU` in
-spec.js is a published Windows 11 figure, not a measurement, and that
-object carries `measured: false` to say so.
-
-The route to measuring it is already worked out and should be used as soon
-as a session is unlocked. The Start button does **not** support
-`InvokePattern` or `LegacyIAccessible`, which is what most automation
-snippets reach for; it supports **`TogglePattern`**:
-
-```powershell
-$btn = $root.FindFirst($Descendants, $AutomationIdIs_StartButton)
-$btn.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle()
-```
-
-That opens the menu through the UIA channel, so it works where pointer
-injection does not. Walk the resulting window the same way as the taskbar,
-and the `START_MENU` numbers can be replaced with measured ones without any
-other change — `tools/verify-geometry.py` reads them from spec.js.
+**The Quick Settings flyout.** Every attempt to open it through UIA
+failed: the tray's system glyphs expose neither `InvokePattern` nor
+`TogglePattern` in a form that worked here, and pointer injection is
+blocked. The extension restyles GNOME's own Quick Settings rather than
+reproducing a measured layout, and anchors it to the screen corner because
+that is where Windows puts it — an observation from the screen grabs, not
+a measurement of the flyout itself.
 
 ## Reproducing
 

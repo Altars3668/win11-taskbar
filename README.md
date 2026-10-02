@@ -68,8 +68,19 @@ the pinned grid, an "All apps" list, recent documents under "Recommended",
 and a footer with the account and a power menu. The Super key opens it
 instead of the Overview. Right-clicking a tile pins or unpins it.
 
-Its *proportions*, unlike everything else here, are not measured — see the
-honesty note below.
+Measured like everything else: 832 x 864, 13px above the taskbar, an
+8-column pinned grid at a 96 x 84 pitch with 32px icons. Note that is the
+*new* Start menu — the measurement machine runs Insider build 29671, where
+it is 832 wide with 8 columns rather than the 640 and 6 of the shipping
+build. `docs/windows-spec.md` explains, including why `TogglePattern` is
+the only way to open it from a script.
+
+**Quick Settings.** Windows puts Wi-Fi, Bluetooth, volume and brightness in
+one flyout anchored to the bottom-right corner. GNOME has that panel
+already, backed by NetworkManager, UPower and the mixer. Rebuilding it
+would mean rebuilding all of that, so instead the real one is moved into
+the taskbar, restyled (no pointer arrow, rounded, following light/dark) and
+re-anchored to the screen corner the way Windows anchors its flyout.
 
 **Also:** Task View button, a two-line clock, the 12px show-desktop sliver
 with Windows' minimise/restore toggle, per-workspace window filtering (the
@@ -131,6 +142,22 @@ Requires GNOME Shell 48, 49 or 50.
 Screen edge, centre/left alignment, auto-hide, which elements to show,
 per-monitor and per-workspace filtering, clock format, Aero Peek, and
 whether to hide GNOME's own top bar (on by default — Windows has one bar).
+
+## Seeing it before you commit to it
+
+Wayland only scans for extensions at login, so there is no way to load this
+into a running session — `ReloadExtension` over D-Bus only knows about
+extensions the shell already scanned, and GNOME 50 removed `Eval`. Short of
+logging out, the way to look at it is to render every state headlessly:
+
+```bash
+tools/screenshots.sh ~/w11-shots
+```
+
+That starts a throwaway shell on a 1920x1080 virtual monitor, launches some
+apps and tray items in it, and saves: idle, the thumbnail flyout, a jump
+list, the Start menu, All apps, the tray overflow, dark mode, and
+left-aligned. Your session is never touched.
 
 ## Testing
 

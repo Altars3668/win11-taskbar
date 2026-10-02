@@ -16,6 +16,7 @@ import {setGettext} from './lib/jumpList.js';
 import {Taskbar} from './lib/panel.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
+import {cleanup as cleanupTheme} from './lib/theme.js';
 
 export default class Win11TaskbarExtension extends Extension {
     enable() {
@@ -68,6 +69,7 @@ export default class Win11TaskbarExtension extends Extension {
         this._statusHost = null;
 
         this._restoreTopPanel();
+        cleanupTheme();
 
         this._settings = null;
     }
