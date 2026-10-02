@@ -162,12 +162,28 @@ make install      # or: ln -s "$PWD" ~/.local/share/gnome-shell/extensions/win11
 gnome-extensions enable win11-taskbar@altarscn.com
 ```
 
-On Wayland you have to log out and back in for the shell to pick up a new
-extension; on X11, `Alt+F2` then `r` is enough.
+On X11, `Alt+F2` then `r` reloads the shell and that is enough. On Wayland
+the shell cannot be restarted — it *is* the compositor, so restarting it
+takes every window with it — but you still do not have to log out:
+
+```bash
+tools/load-live.sh
+```
+
+The shell scans the extension directories once, at startup, so anything
+installed afterwards is simply unknown to it. (This is why
+`gnome-extensions enable` reports that the extension does not exist, and
+why `ReloadExtension` over D-Bus does not help: it only reloads extensions
+the manager already holds.) Handing the manager the extension directly
+fixes that, and needs JS running inside the shell — GNOME 50 removed the
+Eval D-Bus method, but Looking Glass, the shell's own console, still
+works. The script prints the single line to paste there, puts it on your
+clipboard, and tells you what to run afterwards.
 
 Then switch over. Several stock extensions draw their own taskbar or claim
 the tray, and only one of each can win, so there is a script that sorts it
-out and records what it turned off:
+out and records what it turned off (run `tools/load-live.sh` first if the
+shell has not scanned the extension yet — it will say so):
 
 ```bash
 tools/enable.sh           # show what would change

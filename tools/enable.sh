@@ -39,9 +39,11 @@ fi
 # The files can be in place while the running shell has not scanned them
 # yet — on Wayland it only picks up a new extension at login.
 if ! gnome-extensions list 2>/dev/null | grep -qx "$UUID"; then
-    echo "note: the files are at $EXTDIR, but this shell has not loaded"
-    echo "      the extension yet. Log out and back in, then re-run this."
+    echo "The files are at $EXTDIR, but this shell has not scanned them:"
+    echo "it only looks at startup. You do not have to log out for that —"
+    echo "run tools/load-live.sh and follow the one step it prints."
     echo
+    exit 1
 fi
 
 to_disable=()
