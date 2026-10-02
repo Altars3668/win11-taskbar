@@ -107,6 +107,45 @@
       <description>Approximates the acrylic material Windows uses.</description>
     </key>
 
+    <key name="hide-overview-dash" type="b">
+      <default>true</default>
+      <summary>Hide the Overview's dash</summary>
+      <description>The taskbar already shows the same apps.</description>
+    </key>
+
+    <key name="start-menu" type="b">
+      <default>true</default>
+      <summary>Use the built-in Start menu</summary>
+      <description>When off, the Start button opens GNOME's app grid.</description>
+    </key>
+
+    <key name="super-opens-start" type="b">
+      <default>true</default>
+      <summary>The Super key opens the Start menu</summary>
+      <description>Matches the Windows key. When off, Super opens GNOME's
+      Overview as usual.</description>
+    </key>
+
+    <key name="show-tray" type="b">
+      <default>true</default>
+      <summary>Show the notification area</summary>
+      <description>Hosts StatusNotifierItem tray icons in the taskbar.</description>
+    </key>
+
+    <key name="show-system-indicators" type="b">
+      <default>true</default>
+      <summary>Move GNOME's Quick Settings into the taskbar</summary>
+      <description>Windows keeps network, volume and battery in the tray;
+      with the top bar hidden these have to live here.</description>
+    </key>
+
+    <key name="tray-hidden-items" type="as">
+      <default>[]</default>
+      <summary>Tray items folded into the overflow</summary>
+      <description>Ids of StatusNotifierItems shown behind the chevron
+      instead of directly in the taskbar.</description>
+    </key>
+
     <key name="debug-service" type="b">
       <default>false</default>
       <summary>Expose a read-only D-Bus service for geometry tests</summary>

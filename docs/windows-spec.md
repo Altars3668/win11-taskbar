@@ -111,6 +111,27 @@ Sampling one row at different x gives `rgb(232,222,215)`, `rgb(245,244,248)`,
 the top edge at `rgb(181,181,180)`, and the buttons keep their full 48px
 height underneath it.
 
+## The notification area and its overflow
+
+Enumerating top-level windows finds the overflow flyout even while it is
+hidden, which is enough to measure it without opening anything:
+
+```
+TopLevelWindowForOverflowXamlIsland   234 x 114  @ (1491, 918)   (hidden)
+```
+
+The chevron that opens it is at x=1592 and is 32px wide, so its centre is
+1608 — and 1491 + 234/2 = 1608. The panel is centred on the chevron. Its
+bottom edge is 918 + 114 = 1032, exactly the top of the taskbar, so it sits
+flush against the bar rather than floating above it.
+
+With 9px of padding, 234 x 114 divides evenly into a 4-column grid of
+54 x 48 cells, two rows deep, which is what the extension renders.
+
+Tray icon buttons themselves measured 32 x 48 with a 16 x 16 glyph; the
+merged network and volume glyphs get a narrower 24 x 48 cell, the power
+glyph 54 x 48.
+
 ## Timings (registry)
 
 | Key | Value | Meaning |
@@ -137,6 +158,28 @@ only appearance values in the project that are not measured.
 one window, so the visual Windows uses for a group of two or more was never
 captured. The extension approximates it with a second outline behind the
 plate.
+
+**The Start menu, entirely.** The machine's session locked itself between
+measurement runs (LockApp was in the foreground), and a locked session
+exposes no shell UI at all — the taskbar is gone from the window list and
+UIAutomation has nothing to walk. So every number in `START_MENU` in
+spec.js is a published Windows 11 figure, not a measurement, and that
+object carries `measured: false` to say so.
+
+The route to measuring it is already worked out and should be used as soon
+as a session is unlocked. The Start button does **not** support
+`InvokePattern` or `LegacyIAccessible`, which is what most automation
+snippets reach for; it supports **`TogglePattern`**:
+
+```powershell
+$btn = $root.FindFirst($Descendants, $AutomationIdIs_StartButton)
+$btn.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle()
+```
+
+That opens the menu through the UIA channel, so it works where pointer
+injection does not. Walk the resulting window the same way as the taskbar,
+and the `START_MENU` numbers can be replaced with measured ones without any
+other change — `tools/verify-geometry.py` reads them from spec.js.
 
 ## Reproducing
 

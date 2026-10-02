@@ -225,3 +225,257 @@
     border-radius: 8px;
     padding: 4px;
 }
+
+/* --------------------------------------------------------- notification area */
+
+/* Measured: tray icon buttons are 32x48 with a 16x16 glyph; the chevron is
+   the same 32x48 cell. Sizes are applied from JS; this is appearance only. */
+.w11-tray-icon {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    border-radius: 4px;
+}
+
+.w11-tray-icon:hover,
+.w11-tray-chevron:hover {
+    background-color: rgba(0, 0, 0, 0.0605);
+}
+
+.dark .w11-tray-icon:hover,
+.dark .w11-tray-chevron:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+/* Windows tints an icon that is asking for attention. */
+.w11-tray-attention {
+    background-color: rgba(196, 43, 28, 0.18);
+}
+
+/* Measured: the overflow panel is 234x114 and sits right on the taskbar,
+   centred on the chevron. With 9px padding that is a 4x2 grid of 54x48. */
+.w11-tray-overflow {
+    background: none;
+}
+
+.w11-tray-overflow-grid {
+    background-color: rgba(243, 243, 243, 0.92);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 9px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.dark .w11-tray-overflow-grid {
+    background-color: rgba(44, 44, 44, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* GNOME's Quick Settings, borrowed in. Its icons are sized for a 32px top
+   bar and stretch in our 48px band, so pin them to the 16px glyph Windows
+   uses and give each the measured 24px cell. */
+.w11-system-indicator {
+    padding: 0;
+}
+
+.w11-system-indicator .system-status-icon,
+.w11-system-indicator StIcon {
+    icon-size: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    margin: 0 4px;
+    padding: 0;
+}
+
+.w11-system-indicator .panel-button,
+.w11-system-indicator > StBoxLayout {
+    padding: 0;
+    margin: 0;
+    spacing: 0;
+}
+
+.w11-system-area {
+    spacing: 0;
+}
+
+.w11-tray-menu .popup-menu-content {
+    border-radius: 8px;
+    padding: 4px;
+}
+
+/* ------------------------------------------------------------ Start menu */
+
+/* NOTE: unlike the taskbar itself, these proportions are not measured —
+   the measurement machine locked before the Start menu could be walked.
+   They follow the published Windows 11 figures; see docs/windows-spec.md. */
+
+.w11-start-menu {
+    background: none;
+}
+
+.w11-start-panel {
+    background-color: rgba(243, 243, 243, 0.96);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    padding: 24px;
+    spacing: 16px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+    color: #1a1a1a;
+}
+
+.dark .w11-start-panel {
+    background-color: rgba(40, 40, 40, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.w11-start-search {
+    border-radius: 18px;
+    padding: 6px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.dark .w11-start-search {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.w11-start-search:focus {
+    border: 2px solid rgb(0, 120, 212);
+}
+
+.w11-start-search-icon {
+    padding-right: 6px;
+}
+
+.w11-start-header {
+    padding: 0 4px;
+    spacing: 8px;
+}
+
+.w11-start-header-label {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.w11-start-allapps {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.w11-start-allapps:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.dark .w11-start-allapps {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark .w11-start-allapps:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.w11-start-scroll {
+    padding: 0;
+}
+
+.w11-start-grid {
+    padding: 4px;
+}
+
+.w11-start-tile {
+    border-radius: 6px;
+    padding: 6px;
+    background: none;
+}
+
+.w11-start-tile:hover {
+    background-color: rgba(0, 0, 0, 0.0605);
+}
+
+.dark .w11-start-tile:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+.w11-start-tile-label {
+    font-size: 10px;
+    padding-top: 6px;
+    max-width: 80px;
+    text-align: center;
+}
+
+.w11-start-row {
+    border-radius: 6px;
+    padding: 0 8px;
+    background: none;
+}
+
+.w11-start-row:hover {
+    background-color: rgba(0, 0, 0, 0.0605);
+}
+
+.dark .w11-start-row:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+.w11-start-row-box {
+    spacing: 12px;
+}
+
+.w11-start-row-title {
+    font-size: 12px;
+}
+
+.w11-start-row-subtitle {
+    font-size: 10px;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.dark .w11-start-row-subtitle {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.w11-start-empty {
+    padding: 24px;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.dark .w11-start-empty {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.w11-start-footer {
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    spacing: 8px;
+}
+
+.dark .w11-start-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.w11-start-account,
+.w11-start-power {
+    border-radius: 6px;
+    padding: 8px;
+    background: none;
+}
+
+.w11-start-account:hover,
+.w11-start-power:hover {
+    background-color: rgba(0, 0, 0, 0.0605);
+}
+
+.dark .w11-start-account:hover,
+.dark .w11-start-power:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+.w11-start-power-menu .popup-menu-content {
+    border-radius: 8px;
+    padding: 4px;
+}

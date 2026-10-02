@@ -49,11 +49,32 @@ Windows uses. Recent documents are parsed out of `recently-used.xbel`
 directly, because gnome-shell does not link GTK and `Gtk.RecentManager` is
 not importable inside the shell process.
 
-**Also:** Start and Task View buttons, a two-line clock, the 12px
-show-desktop sliver with Windows' minimise/restore toggle, per-workspace
-window filtering (the Windows virtual-desktop default), multi-monitor
-support, light/dark following the desktop preference, and an acrylic blur
-behind the bar.
+**Notification area.** The taskbar is its own StatusNotifierItem host — it
+registers as `org.kde.StatusNotifierWatcher` rather than borrowing icons
+from somewhere else, which is what makes the Windows overflow behaviour
+possible. Icons render at the measured 32 x 48 with a 16 x 16 glyph, with
+DBusMenu context menus, scroll and middle-click forwarded to the app. Items
+listed in `tray-hidden-items` fold behind a chevron into an overflow panel
+placed exactly where Windows puts it: centred on the chevron and flush
+against the bar. An item that starts asking for attention is pulled back
+out, as on Windows.
+
+GNOME's own Quick Settings — network, volume, battery — is moved into the
+tray rather than reimplemented, because hiding the top bar would otherwise
+take the volume slider with it. It is put back untouched on disable.
+
+**Start menu.** A floating panel above the Start button with a search box,
+the pinned grid, an "All apps" list, recent documents under "Recommended",
+and a footer with the account and a power menu. The Super key opens it
+instead of the Overview. Right-clicking a tile pins or unpins it.
+
+Its *proportions*, unlike everything else here, are not measured — see the
+honesty note below.
+
+**Also:** Task View button, a two-line clock, the 12px show-desktop sliver
+with Windows' minimise/restore toggle, per-workspace window filtering (the
+Windows virtual-desktop default), multi-monitor support, light/dark
+following the desktop preference, and an acrylic blur behind the bar.
 
 ## What it does not do
 
@@ -106,8 +127,9 @@ Runs, in order: a syntax check of every module; the click-semantics unit
 tests; a schema compile; and then the real thing — it starts a headless
 GNOME Shell on a 1920 × 1080 virtual monitor, the same size as the Windows
 machine, with its own D-Bus and its own config so your session is untouched,
-launches a couple of apps, checks the log for JS errors, and diffs the
-rendered geometry against the Windows measurements.
+launches a couple of apps and two synthetic tray items, checks the log for
+JS errors, and diffs the rendered geometry against the Windows
+measurements — 65 assertions as of now.
 
 The geometry check talks to a small read-only D-Bus service the extension
 exposes when `debug-service` is on. It exists because GNOME 50 removed
@@ -125,6 +147,15 @@ tools/testbed.sh errors     # JS errors from its log
 tools/testbed.sh stop
 ```
 
+The debug service also has a `Trigger` method for the parts that normally
+need a click, since the test shell has no pointer:
+
+```bash
+gdbus call --session --dest org.gnome.Shell.Extensions.Win11Taskbar \
+  --object-path /org/gnome/Shell/Extensions/Win11Taskbar \
+  --method org.gnome.Shell.Extensions.Win11Taskbar.Trigger start-menu
+```
+
 ## Layout of the source
 
 | File | What lives there |
@@ -137,15 +168,25 @@ tools/testbed.sh stop
 | `lib/windowPreview.js` | The thumbnail flyout and Aero Peek. |
 | `lib/jumpList.js` | The right-click menu. |
 | `lib/shellButtons.js` | Start, Task View, clock, show-desktop. |
+| `lib/startMenu.js` | The Start menu. |
+| `lib/superKey.js` | Making Super open it instead of the Overview. |
+| `lib/statusNotifier.js` | The StatusNotifierItem watcher and host. |
+| `lib/dbusMenu.js` | Tray icons' context menus. |
+| `lib/trayArea.js` | The notification area and its overflow. |
+| `lib/systemIndicators.js` | Borrowing GNOME's Quick Settings in. |
 | `lib/panel.js` | The surface, the three zones, struts, theming. |
 | `lib/autoHide.js` | Sliding out of the way behind a pressure barrier. |
-| `lib/debugService.js` | Read-only geometry for the tests. Off by default. |
+| `lib/debugService.js` | Geometry for the tests, plus a trigger for UI that needs a click. Off by default. |
 
 Two places lay out children by hand rather than with `Clutter.BinLayout`:
 the panel's three zones and the inside of a task button. This is not
 stylistic — `BinLayout` ignored the children's `x_align`/`y_align` here, and
 both the zone placement and the indicator's 5px offset from the bottom edge
 came out wrong until they were allocated explicitly.
+
+`lib/superKey.js` blocks the shell's own `overlay-key` handlers rather than
+disconnecting them, because they belong to `overviewControls.js` and we
+want them back exactly as they were when the extension is disabled.
 
 ## Licence
 

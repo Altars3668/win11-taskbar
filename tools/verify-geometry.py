@@ -144,9 +144,40 @@ def main():
 
         # The right zone ends flush with the screen edge.
         rightmost = max((bar[k]["x"] + bar[k]["w"])
-                        for k in ("clock", "showDesktop")
-                        if bar[k] and bar[k]["visible"])
+                        for k in ("clock", "showDesktop", "systemIndicators")
+                        if bar.get(k) and bar[k]["visible"])
         c.eq(f"{tag}: tray is flush right", rightmost, panel["x"] + panel["w"])
+
+        # Tray icons: measured 32x48 buttons with a 16x16 glyph, and the
+        # chevron in the same 32x48 cell.
+        tray = bar.get("tray") or {}
+        for icon in tray.get("icons", []):
+            if not icon.get("visible"):
+                continue
+            c.eq(f"{tag}: tray icon {icon['id']} width",
+                 icon["w"], spec["TRAY"]["iconButtonWidth"] * scale)
+            c.eq(f"{tag}: tray icon {icon['id']} height",
+                 icon["h"], spec["BUTTON"]["height"] * scale)
+            if icon.get("glyph"):
+                c.eq(f"{tag}: tray glyph {icon['id']} size",
+                     icon["glyph"]["w"], spec["TRAY"]["iconSize"] * scale)
+        if tray.get("chevronVisible") and tray.get("chevron"):
+            c.eq(f"{tag}: overflow chevron width",
+                 tray["chevron"]["w"], spec["TRAY"]["overflowButtonWidth"] * scale)
+        if not tray.get("overflowVisible", False):
+            c.passes += 1
+        else:
+            c.failures.append(f"{tag}: the overflow panel should start closed")
+
+        # The Start menu's proportions are NOT measured (see spec.js), so we
+        # only assert that what renders matches what spec.js asks for, and
+        # that it starts closed.
+        start = bar.get("startMenu")
+        if start is not None:
+            if not start["open"]:
+                c.passes += 1
+            else:
+                c.failures.append(f"{tag}: the Start menu should start closed")
 
         if not bar["preview"]["visible"]:
             c.passes += 1

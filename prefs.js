@@ -13,6 +13,8 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         const settings = this.getSettings();
 
         window.add(this._layoutPage(settings));
+        window.add(this._startPage(settings));
+        window.add(this._trayPage(settings));
         window.add(this._behaviourPage(settings));
         window.add(this._clockPage(settings));
     }
@@ -54,6 +56,82 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('"Show desktop" sliver')));
         parts.add(this._switch(settings, 'acrylic', _('Blur the desktop behind the bar'),
             _('Approximates the acrylic material Windows uses.')));
+        parts.add(this._switch(settings, 'hide-overview-dash',
+            _('Hide the Overview\u2019s dash'),
+            _('The taskbar already shows the same apps.')));
+
+        return page;
+    }
+
+    _startPage(settings) {
+        const page = new Adw.PreferencesPage({
+            title: _('Start'),
+            icon_name: 'view-app-grid-symbolic',
+        });
+        const group = new Adw.PreferencesGroup({
+            title: _('Start menu'),
+            description: _('Search, pinned apps, all apps, recent documents ' +
+                'and a power menu. Right-click a tile to pin or unpin it.'),
+        });
+        page.add(group);
+
+        group.add(this._switch(settings, 'start-menu',
+            _('Use the built-in Start menu'),
+            _('When off, the Start button opens GNOME\u2019s app grid.')));
+        group.add(this._switch(settings, 'super-opens-start',
+            _('The Super key opens it'),
+            _('Matches the Windows key. When off, Super opens the Overview.')));
+
+        const note = new Adw.PreferencesGroup({
+            title: _('A note on fidelity'),
+            description: _('Unlike the taskbar, the Start menu\u2019s ' +
+                'proportions are not measured from Windows: the measurement ' +
+                'machine locked its session before the menu could be read. ' +
+                'They follow the published Windows 11 figures.'),
+        });
+        page.add(note);
+
+        return page;
+    }
+
+    _trayPage(settings) {
+        const page = new Adw.PreferencesPage({
+            title: _('Tray'),
+            icon_name: 'preferences-system-notifications-symbolic',
+        });
+
+        const group = new Adw.PreferencesGroup({
+            title: _('Notification area'),
+            description: _('The taskbar hosts StatusNotifierItem icons ' +
+                'itself. Only one extension can do that, so disable ' +
+                'AppIndicator Support if it is enabled \u2014 you do not ' +
+                'need both.'),
+        });
+        page.add(group);
+
+        group.add(this._switch(settings, 'show-tray',
+            _('Show tray icons')));
+        group.add(this._switch(settings, 'show-system-indicators',
+            _('Move Quick Settings into the taskbar'),
+            _('Network, volume and battery. With the top bar hidden these ' +
+                'have nowhere else to go.')));
+
+        const overflow = new Adw.PreferencesGroup({
+            title: _('Overflow'),
+            description: _('Ids listed here fold behind the chevron, one ' +
+                'per line. An item asking for attention is shown anyway.'),
+        });
+        page.add(overflow);
+
+        const entry = new Adw.EntryRow({title: _('Hidden item ids')});
+        entry.text = settings.get_strv('tray-hidden-items').join(', ');
+        entry.connect('apply', () => {
+            const ids = entry.text.split(',')
+                .map(s2 => s2.trim()).filter(s2 => s2);
+            settings.set_strv('tray-hidden-items', ids);
+        });
+        entry.show_apply_button = true;
+        overflow.add(entry);
 
         return page;
     }

@@ -113,8 +113,12 @@ case "${1:-all}" in
     for app in gnome-text-editor gnome-calculator; do
         command -v "$app" >/dev/null && setsid "$app" >/dev/null 2>&1 &
     done
+    # Publish tray items too: no app with a StatusNotifierItem is guaranteed
+    # to be installed, and the tray needs something to show.
+    setsid gjs -m "$ROOT/tools/fake-tray-item.js"         tray-alpha dialog-information-symbolic >/dev/null 2>&1 &
+    setsid gjs -m "$ROOT/tools/fake-tray-item.js"         tray-beta mail-unread-symbolic >/dev/null 2>&1 &
     sleep 10
-    echo "launched test apps" ;;
+    echo "launched test apps and tray items" ;;
   verify)
     session_env
     python3 "$ROOT/tools/verify-geometry.py" ;;

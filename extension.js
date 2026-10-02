@@ -11,12 +11,17 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {DebugService} from './lib/debugService.js';
+import {setGettext as setMenuGettext} from './lib/dbusMenu.js';
 import {setGettext} from './lib/jumpList.js';
 import {Taskbar} from './lib/panel.js';
+import {setGettext as setStartGettext} from './lib/startMenu.js';
+import {StatusNotifierHost} from './lib/statusNotifier.js';
 
 export default class Win11TaskbarExtension extends Extension {
     enable() {
         setGettext(_);
+        setMenuGettext(_);
+        setStartGettext(_);
 
         this._settings = this.getSettings();
         this._taskbars = [];
@@ -28,6 +33,10 @@ export default class Win11TaskbarExtension extends Extension {
             this._settings.connect('changed::multi-monitor', () => this._rebuild()),
             this._settings.connect('changed::hide-top-panel', () => this._syncTopPanel()),
         ];
+
+        // One watcher for the whole session, shared by every taskbar.
+        if (this._settings.get_boolean('show-tray'))
+            this._statusHost = new StatusNotifierHost();
 
         this._rebuild();
         this._syncTopPanel();
@@ -54,6 +63,10 @@ export default class Win11TaskbarExtension extends Extension {
         this._debug = null;
 
         this._destroyTaskbars();
+
+        this._statusHost?.destroy();
+        this._statusHost = null;
+
         this._restoreTopPanel();
 
         this._settings = null;
@@ -71,8 +84,10 @@ export default class Win11TaskbarExtension extends Extension {
                 ? Main.layoutManager.monitors.map((_m, i) => i)
                 : [Main.layoutManager.primaryIndex];
 
-            for (const index of indices)
-                this._taskbars.push(new Taskbar(index, this._settings));
+            for (const index of indices) {
+                this._taskbars.push(
+                    new Taskbar(index, this._settings, this._statusHost));
+            }
 
             return GLib.SOURCE_REMOVE;
         });
