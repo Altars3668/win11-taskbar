@@ -114,6 +114,110 @@
       <description>Fades the other windows out, as Aero Peek does.</description>
     </key>
 
+    <key name="quick-links-key" type="as">
+      <default><![CDATA[['<Super>x']]]></default>
+      <summary>Open the Quick Link menu</summary>
+      <description>Windows' Win+X menu, also on a right-click of the
+      Start button.</description>
+    </key>
+
+    <key name="clipboard-key" type="as">
+      <default><![CDATA[['<Super>v']]]></default>
+      <summary>Open clipboard history</summary>
+    </key>
+
+    <key name="clipboard-history" type="b">
+      <default>true</default>
+      <summary>Keep a clipboard history</summary>
+      <description>Remembers what you copy and offers it back at the
+      pointer, as Win+V does.</description>
+    </key>
+
+    <key name="clipboard-pinned" type="as">
+      <default>[]</default>
+      <summary>Pinned clipboard entries</summary>
+      <description>Kept across restarts, as Windows keeps pinned items.</description>
+    </key>
+
+    <key name="show-desktop-key" type="as">
+      <default><![CDATA[['<Super>d']]]></default>
+      <summary>Show the desktop</summary>
+    </key>
+    <key name="file-manager-key" type="as">
+      <default><![CDATA[['<Super>e']]]></default>
+      <summary>Open the file manager</summary>
+    </key>
+    <key name="settings-key" type="as">
+      <default><![CDATA[['<Super>i']]]></default>
+      <summary>Open Settings</summary>
+    </key>
+    <key name="run-key" type="as">
+      <default><![CDATA[['<Super>r']]]></default>
+      <summary>Open the run dialog</summary>
+    </key>
+    <key name="quick-settings-key" type="as">
+      <default><![CDATA[['<Super>a']]]></default>
+      <summary>Open quick settings</summary>
+    </key>
+    <key name="notifications-key" type="as">
+      <default><![CDATA[['<Super>n']]]></default>
+      <summary>Open the notification centre</summary>
+    </key>
+    <key name="cycle-tasks-key" type="as">
+      <default><![CDATA[['<Super>t']]]></default>
+      <summary>Step through the taskbar buttons</summary>
+    </key>
+    <key name="app-key-1" type="as">
+      <default><![CDATA[['<Super>1']]]></default>
+      <summary>Activate taskbar button 1</summary>
+    </key>
+    <key name="app-key-2" type="as">
+      <default><![CDATA[['<Super>2']]]></default>
+      <summary>Activate taskbar button 2</summary>
+    </key>
+    <key name="app-key-3" type="as">
+      <default><![CDATA[['<Super>3']]]></default>
+      <summary>Activate taskbar button 3</summary>
+    </key>
+    <key name="app-key-4" type="as">
+      <default><![CDATA[['<Super>4']]]></default>
+      <summary>Activate taskbar button 4</summary>
+    </key>
+    <key name="app-key-5" type="as">
+      <default><![CDATA[['<Super>5']]]></default>
+      <summary>Activate taskbar button 5</summary>
+    </key>
+    <key name="app-key-6" type="as">
+      <default><![CDATA[['<Super>6']]]></default>
+      <summary>Activate taskbar button 6</summary>
+    </key>
+    <key name="app-key-7" type="as">
+      <default><![CDATA[['<Super>7']]]></default>
+      <summary>Activate taskbar button 7</summary>
+    </key>
+    <key name="app-key-8" type="as">
+      <default><![CDATA[['<Super>8']]]></default>
+      <summary>Activate taskbar button 8</summary>
+    </key>
+    <key name="app-key-9" type="as">
+      <default><![CDATA[['<Super>9']]]></default>
+      <summary>Activate taskbar button 9</summary>
+    </key>
+    <key name="super-number-keys" type="b">
+      <default>true</default>
+      <summary>Super+1..9 reach taskbar buttons</summary>
+      <description>As on Windows. GNOME binds these to the favourites
+      list instead, which disagrees as soon as something unpinned is
+      running; its binding is restored when this is off.</description>
+    </key>
+
+    <key name="context-menu-on-release" type="b">
+      <default>true</default>
+      <summary>Open context menus on release, not on press</summary>
+      <description>Windows opens a right-click menu when the button comes
+      back up. Opening it on press breaks right-drag gestures, which some
+      applications rely on.</description>
+    </key>
     <key name="icon-size" type="i">
       <range min="16" max="40"/>
       <default>24</default>

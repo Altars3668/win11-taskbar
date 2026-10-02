@@ -18,6 +18,8 @@ import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
 import {setGettext as setEditorGettext} from './lib/quickSettingsEditor.js';
+import {setGettext as setLinksGettext} from './lib/quickLinks.js';
+import {setGettext as setClipGettext} from './lib/clipboardHistory.js';
 import {cleanup as cleanupTheme, setExtensionSettings} from './lib/theme.js';
 
 export default class Win11TaskbarExtension extends Extension {
@@ -27,6 +29,8 @@ export default class Win11TaskbarExtension extends Extension {
         setStartGettext(_);
         setTrayGettext(_);
         setEditorGettext(_);
+        setLinksGettext(_);
+        setClipGettext(_);
 
         this._settings = this.getSettings();
         setExtensionSettings(this._settings);

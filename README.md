@@ -113,10 +113,29 @@ Adwaita's strokes are drawn for a 16px grid, so anything larger thickens
 them, and hand-drawn shapes next to stock ones never quite match. App icons
 stay at the measured 24px, tray glyphs at 16px.
 
+**Keyboard.** Super+X opens the Quick Link menu — Windows' Win+X, the
+flat list of administrative destinations, also reached by right-clicking
+Start. Entries whose target is not installed are left out rather than
+offered and then failing. Super+V opens clipboard history at the pointer,
+with pinned entries kept across restarts.
+
+Also bound: Super+A quick settings, Super+N notifications, Super+D show
+desktop, Super+E files, Super+I settings, Super+R run, Super+T steps
+through the taskbar, and Super+1…9 reach taskbar buttons. That last one
+takes over GNOME's `switch-to-application-N`, which walks the favourites
+list where Windows walks the taskbar — they agree until something
+unpinned is running. The shell's binding is put back when the setting is
+turned off or the extension is disabled.
+
+**Context menus open on release**, as they do on Windows, and a press
+that travels more than a few pixels is treated as a gesture and opens
+nothing. Opening on press is what stops a right-drag ever reaching the
+thing underneath. There is a setting if you prefer press.
+
 **Also:** a two-line clock, the 12px show-desktop sliver with Windows'
-minimise/restore toggle, per-workspace window filtering (the Windows
-virtual-desktop default), multi-monitor support, and an option to stop
-reserving space so windows run under the bar.
+minimise/restore toggle and Aero Peek, per-workspace window filtering
+(the Windows virtual-desktop default), multi-monitor support, and an
+option to stop reserving space so windows run under the bar.
 
 ## What it does not do
 
@@ -148,6 +167,17 @@ Being straight about the gaps:
   `org.kde.StatusNotifierWatcher`. If that extension is enabled it wins
   and this taskbar shows no tray icons — the log says so plainly. You do
   not need both: this is a full host, not a client of that one.
+* **Release-timed context menus only apply to this extension.** Every
+  menu it owns — task buttons, Start, tray icons — waits for the button
+  to come back up. It cannot change that for anything else: a menu
+  inside Edge, Firefox or any GTK or Qt application is opened by that
+  application's own toolkit, in its own process, and no shell extension
+  reaches into it. GTK opens context menus on press and offers no setting
+  to change it.
+* **Clipboard history cannot paste for you.** Choosing an entry puts it
+  on the clipboard; typing it into the focused window would need
+  synthetic input, which Wayland does not give an extension. It is also
+  polled, because GNOME has no clipboard-changed signal.
 * **The acrylic needs something behind it.** Blurring a flat colour gives
   the same flat colour, so over a plain desktop background the bar looks
   solid however correct the material is. It earns its keep over a
@@ -282,6 +312,9 @@ gdbus call --session --dest org.gnome.Shell.Extensions.Win11Taskbar \
 | `lib/systemFlyouts.js` | Quick settings and the notification centre. |
 | `lib/theme.js` | Light/dark, followed or pinned. |
 | `lib/motion.js` | Durations and curves, and reduce-motion. |
+| `lib/quickLinks.js` | The Win+X menu. |
+| `lib/clipboardHistory.js` | Win+V, at the pointer. |
+| `lib/shortcuts.js` | The rest of the Windows key bindings. |
 | `lib/notificationCentre.js` | Notifications and the calendar. |
 | `lib/startMenu.js` | The Start menu. |
 | `lib/superKey.js` | Making Super open it instead of the Overview. |

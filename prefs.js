@@ -177,6 +177,45 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         group.add(this._switch(settings, 'jumplist-recent',
             _('Show recent documents in the jump list')));
 
+        const shortcuts = new Adw.PreferencesGroup({
+            title: _('Windows shortcuts'),
+            description: _('Super+X opens the Quick Link menu, which is also '
+                + 'a right-click of the Start button. Super+V opens '
+                + 'clipboard history at the pointer.'),
+        });
+        page.add(shortcuts);
+        shortcuts.add(this._switch(settings, 'clipboard-history',
+            _('Keep a clipboard history'),
+            _('Choosing an entry copies it; an extension cannot paste for '
+              + 'you on Wayland.')));
+        shortcuts.add(this._switch(settings, 'super-number-keys',
+            _('Super+1…9 reach taskbar buttons'),
+            _('As on Windows. GNOME binds these to the favourites list, '
+              + 'which disagrees once something unpinned is running.')));
+
+        const keyList = new Adw.PreferencesGroup({title: _('Also bound')});
+        page.add(keyList);
+        for (const [combo, what] of [
+            ['Super+X', _('Quick Link menu (also right-click Start)')],
+            ['Super+V', _('Clipboard history, at the pointer')],
+            ['Super+A', _('Quick settings')],
+            ['Super+N', _('Notification centre')],
+            ['Super+D', _('Show the desktop')],
+            ['Super+E', _('File manager')],
+            ['Super+I', _('Settings')],
+            ['Super+R', _('Run')],
+            ['Super+T', _('Step through taskbar buttons')],
+        ])
+            keyList.add(new Adw.ActionRow({title: combo, subtitle: what}));
+
+        const mouse = new Adw.PreferencesGroup({title: _('Mouse')});
+        page.add(mouse);
+        mouse.add(this._switch(settings, 'context-menu-on-release',
+            _('Open context menus on release'),
+            _('Windows opens a right-click menu when the button comes back '
+              + 'up. Opening it on press breaks right-drag gestures, which '
+              + 'some applications use.')));
+
         const help = new Adw.PreferencesGroup({title: _('Click reference')});
         page.add(help);
         for (const [gesture, effect] of [
