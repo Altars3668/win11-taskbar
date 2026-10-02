@@ -57,11 +57,27 @@ $SNIPPET
 
 EOF
 
+# Try to put it on the clipboard, but do not pretend it worked. wl-copy
+# talks to the Wayland compositor directly; xclip needs the Xwayland
+# display the shell is running, which is not this shell's DISPLAY.
+copied=0
 if command -v wl-copy >/dev/null 2>&1; then
-    printf '%s' "$SNIPPET" | wl-copy && echo "(the line is on your clipboard)"
+    printf '%s' "$SNIPPET" | wl-copy 2>/dev/null && copied=1
 elif command -v xclip >/dev/null 2>&1; then
-    printf '%s' "$SNIPPET" | xclip -selection clipboard && \
-        echo "(the line is on your clipboard)"
+    SHELL_PID=$(pgrep -u "$USER" -x gnome-shell | head -1)
+    SHELL_DISPLAY=$(tr '\0' '\n' < "/proc/$SHELL_PID/environ" 2>/dev/null |
+        sed -n 's/^DISPLAY=//p' | head -1)
+    if [ -n "$SHELL_DISPLAY" ]; then
+        printf '%s' "$SNIPPET" |
+            DISPLAY="$SHELL_DISPLAY" xclip -selection clipboard 2>/dev/null &&
+            copied=1
+    fi
+fi
+
+if [ "$copied" = 1 ]; then
+    echo "(the line is on your clipboard — Ctrl+V in Looking Glass)"
+else
+    echo "(could not reach the clipboard; select the line above and copy it)"
 fi
 
 echo
