@@ -114,6 +114,14 @@
       <description>Fades the other windows out, as Aero Peek does.</description>
     </key>
 
+    <key name="icon-size" type="i">
+      <range min="16" max="40"/>
+      <default>24</default>
+      <summary>Task button icon size</summary>
+      <description>24 is what was measured on Windows. Larger reads
+      better on a high-density display where the bar looks sparse.</description>
+    </key>
+
     <key name="theme" enum="org.gnome.shell.extensions.win11-taskbar.theme">
       <default>'auto'</default>
       <summary>Appearance</summary>

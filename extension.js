@@ -115,7 +115,16 @@ export default class Win11TaskbarExtension extends Extension {
             // Plain hide() is fine now: nothing we need lives in the top
             // bar any more. The notification centre used to, which is why
             // this was once a good deal more complicated.
-            Main.layoutManager.panelBox.hide();
+            //
+            // It does have to be held down, though: the shell shows the
+            // panel again whenever the Overview opens, so hiding it once
+            // is not enough.
+            const box = Main.layoutManager.panelBox;
+            box.hide();
+            this._panelWatchId = box.connect('notify::visible', () => {
+                if (box.visible && this._topPanelHidden)
+                    box.hide();
+            });
             this._topPanelHidden = true;
         } else {
             this._restoreTopPanel();
@@ -125,7 +134,12 @@ export default class Win11TaskbarExtension extends Extension {
     _restoreTopPanel() {
         if (!this._topPanelHidden)
             return;
-        Main.layoutManager.panelBox.show();
+        const box = Main.layoutManager.panelBox;
         this._topPanelHidden = false;
+        if (this._panelWatchId) {
+            box.disconnect(this._panelWatchId);
+            this._panelWatchId = 0;
+        }
+        box.show();
     }
 }

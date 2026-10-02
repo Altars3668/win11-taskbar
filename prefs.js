@@ -56,6 +56,17 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             [['auto', _('Follow the desktop')], ['light', _('Light')],
              ['dark', _('Dark')]]));
 
+        const iconRow = new Adw.SpinRow({
+            title: _('Task icon size'),
+            subtitle: _('24 is the measured Windows size.'),
+            adjustment: new Gtk.Adjustment({
+                lower: 16, upper: 40, step_increment: 2, page_increment: 4,
+            }),
+        });
+        settings.bind('icon-size', iconRow, 'value',
+            Gio.SettingsBindFlags.DEFAULT);
+        appearance.add(iconRow);
+
         const parts = new Adw.PreferencesGroup({title: _('Elements')});
         page.add(parts);
         parts.add(this._switch(settings, 'show-start-button', _('Start button')));
