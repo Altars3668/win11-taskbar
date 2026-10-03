@@ -1,48 +1,210 @@
-Context menus: ignore the release that opened the menu
-
-GtkModelButton treats an unpaired release — one with no matching press,
-which is exactly the release of the press that opened the menu — as a
-click. That is the X11 press-drag-release model: one press opens the
-menu and selects from it.
-
-Windows uses two steps. Releasing opens the menu and leaves it there; a
-second, separate click chooses. GTK4 has no equivalent of GTK3's 500ms
-guard, so the surprise is unconditional here.
-
-Ignoring unpaired releases gives the Windows model. Ordinary clicks on
-menu items, which do have a matching press, are unaffected, and so is
-keyboard activation.
-
-Applies to: gtk4 4.22.4
-
+Description: Context menus open on release, as on Windows
+ GTK applications pop up a context menu from the press of the secondary
+ button, and the menu then follows the X11 press-drag-release model: drag
+ onto an item and let go to choose it. Windows takes two steps. The menu
+ appears when the button is released and stays open until a second,
+ separate click. Someone used to Windows lets go as soon as the menu
+ appears and picks whatever item is under the pointer.
+ .
+ gtk_popover_popup() called while gtk_main_do_event() is dispatching a
+ press of the secondary button now holds the popover back, and shows it
+ once that button's release has been dispatched. Another press, a popdown
+ or a drag starting from the press cancels it.
+ .
+ GtkModelButton also ignores unpaired releases of the secondary button.
+ GtkGestureClick emits unpaired-release before its button filter runs, so
+ the release of a right press that opened a menu by some other route would
+ otherwise still choose the item under the pointer. Primary-button
+ press-drag-release, which menu bars rely on and Windows also has, ordinary
+ clicks and keyboard activation are unchanged.
+Author: AltarsCN <altarscn2@gmail.com>
+Forwarded: not-needed
+Last-Update: 2026-10-03
+---
 --- a/gtk/gtkmodelbutton.c
 +++ b/gtk/gtkmodelbutton.c
-@@ -1533,8 +1533,26 @@
+@@ -1533,6 +1533,17 @@ gesture_unpaired_release (GtkGestureClic
                            GdkEventSequence *sequence,
                            GtkWidget        *widget)
  {
--  if (gtk_widget_contains (widget, x, y))
--    g_signal_emit (widget, signals[SIGNAL_CLICKED], 0);
-+  /* An unpaired release is the release of the press that opened this
-+   * menu: the pointer was elsewhere when the button went down. GTK
-+   * treats it as a choice, which is the X11 press-drag-release model —
-+   * one press opens the menu and selects from it.
-+   *
-+   * Windows takes two steps. Releasing opens the menu and leaves it
-+   * there; a second, separate click chooses. Someone arriving from
-+   * Windows lets go as soon as the menu appears and lands on whatever
-+   * item is under the pointer.
-+   *
-+   * Ignoring unpaired releases gives the Windows model. Ordinary clicks
-+   * on menu items do have a matching press and are unaffected, as is
-+   * keyboard activation.
++  /* An unpaired release is one whose press happened somewhere else.
++   * For the secondary button that is the press that opened this
++   * context menu, and choosing on its release is the X11
++   * press-drag-release model. Windows leaves the menu open and waits
++   * for a second, separate click, so ignore it. The primary button
++   * keeps press-drag-release, which menu bars rely on and Windows has
++   * too.
 +   */
-+  (void) gesture;
-+  (void) x;
-+  (void) y;
-+  (void) button;
-+  (void) sequence;
-+  (void) widget;
++  if (button == GDK_BUTTON_SECONDARY)
++    return;
++
+   if (gtk_widget_contains (widget, x, y))
+     g_signal_emit (widget, signals[SIGNAL_CLICKED], 0);
+ }
+--- a/gtk/gtkdragsource.c
++++ b/gtk/gtkdragsource.c
+@@ -34,6 +34,7 @@
+ #include "gtkimageprivate.h"
+ #include "gtkdragicon.h"
+ #include "gtkprivate.h"
++#include "gtkpopoverprivate.h"
+ #include "gtkmarshalers.h"
+ #include "gtkpicture.h"
+ #include "gtksettingsprivate.h"
+@@ -581,6 +582,10 @@ gtk_drag_source_drag_begin (GtkDragSourc
+   double dx, dy;
+   GdkContentProvider *content = NULL;
+ 
++  /* A drag from a secondary-button press is not a request for the
++   * context menu that press held back. */
++  gtk_popover_cancel_deferred ();
++
+   widget = gtk_event_controller_get_widget (GTK_EVENT_CONTROLLER (source));
+   device = gtk_gesture_get_device (GTK_GESTURE (source));
+   seat = gdk_device_get_seat (device);
+--- a/gtk/gtkmain.c
++++ b/gtk/gtkmain.c
+@@ -56,6 +56,7 @@
+ #include "gtkmediafileprivate.h"
+ #include "gtkmodulesprivate.h"
+ #include "gtkprivate.h"
++#include "gtkpopoverprivate.h"
+ #include "gtkrecentmanager.h"
+ #include "gtktooltipprivate.h"
+ #include "gtkwidgetprivate.h"
+@@ -1681,6 +1682,9 @@ gtk_main_do_event (GdkEvent *event)
+    */
+   current_events = g_list_prepend (current_events, event);
+ 
++  /* Context menus open on release; see gtk_popover_popup(). */
++  gtk_popover_track_button (event);
++
+   if (is_pointing_event (event))
+     {
+       target_widget = handle_pointing_event (event);
+@@ -1800,6 +1804,8 @@ gtk_main_do_event (GdkEvent *event)
+   g_object_unref (target_widget);
+ 
+  cleanup:
++  gtk_popover_show_deferred (event);
++
+   tmp_list = current_events;
+   current_events = g_list_remove_link (current_events, tmp_list);
+   g_list_free_1 (tmp_list);
+@@ -1922,6 +1928,13 @@ gtk_grab_remove (GtkWidget *widget)
+     }
  }
  
- static void
++/* The event gtk_main_do_event() is dispatching, if any. */
++GdkEvent *
++gtk_get_current_event (void)
++{
++  return current_events ? current_events->data : NULL;
++}
++
+ guint32
+ gtk_get_current_event_time (void)
+ {
+--- a/gtk/gtkpopover.c
++++ b/gtk/gtkpopover.c
+@@ -2408,11 +2408,68 @@ gtk_popover_get_autohide (GtkPopover *po
+  *
+  * Pops @popover up.
+  */
++/* Windows opens a context menu when the secondary button is released.
++ * GTK applications pop theirs up from the press, and the menu then
++ * follows the X11 press-drag-release model: drag onto an item and let go
++ * to choose it. Someone used to Windows lets go as soon as the menu
++ * appears and picks whatever happens to be under the pointer.
++ *
++ * So a popover popped up while a press of the secondary button is being
++ * dispatched is held back, and shown once gtk_main_do_event() has
++ * dispatched that button's release. No release is left to choose with,
++ * and the menu waits for a separate click, as on Windows.
++ */
++static GtkPopover *deferred_popover;
++
++/* A drag, a popdown or another press means the menu is not wanted. */
++void
++gtk_popover_cancel_deferred (void)
++{
++  g_clear_weak_pointer (&deferred_popover);
++}
++
++/* Called by gtk_main_do_event() before it dispatches @event. */
++void
++gtk_popover_track_button (GdkEvent *event)
++{
++  if (gdk_event_get_event_type (event) == GDK_BUTTON_PRESS)
++    gtk_popover_cancel_deferred ();
++}
++
++/* Called by gtk_main_do_event() once it has dispatched @event. */
++void
++gtk_popover_show_deferred (GdkEvent *event)
++{
++  GtkPopover *popover;
++
++  if (deferred_popover == NULL ||
++      gdk_event_get_event_type (event) != GDK_BUTTON_RELEASE ||
++      gdk_button_event_get_button (event) != GDK_BUTTON_SECONDARY)
++    return;
++
++  popover = g_object_ref (deferred_popover);
++  gtk_popover_cancel_deferred ();
++  gtk_widget_set_visible (GTK_WIDGET (popover), TRUE);
++  g_object_unref (popover);
++}
++
+ void
+ gtk_popover_popup (GtkPopover *popover)
+ {
++  GdkEvent *event;
++
+   g_return_if_fail (GTK_IS_POPOVER (popover));
+ 
++  event = gtk_get_current_event ();
++  if (event &&
++      gdk_event_get_event_type (event) == GDK_BUTTON_PRESS &&
++      gdk_button_event_get_button (event) == GDK_BUTTON_SECONDARY &&
++      !gtk_widget_get_visible (GTK_WIDGET (popover)))
++    {
++      g_set_weak_pointer (&deferred_popover, popover);
++      return;
++    }
++
+   gtk_widget_set_visible (GTK_WIDGET (popover), TRUE);
+ }
+ 
+@@ -2461,6 +2518,9 @@ gtk_popover_popdown (GtkPopover *popover
+ {
+   g_return_if_fail (GTK_IS_POPOVER (popover));
+ 
++  if (deferred_popover == popover)
++    gtk_popover_cancel_deferred ();
++
+   if (!gtk_widget_get_visible (GTK_WIDGET (popover)))
+     return;
+ 
+--- a/gtk/gtkpopoverprivate.h
++++ b/gtk/gtkpopoverprivate.h
+@@ -23,5 +23,9 @@ G_BEGIN_DECLS
+ 
+ GtkWidget *gtk_popover_get_contents_widget (GtkPopover *popover);
+ 
++void gtk_popover_track_button     (GdkEvent *event);
++void gtk_popover_show_deferred    (GdkEvent *event);
++void gtk_popover_cancel_deferred  (void);
++
+ G_END_DECLS
+ 
+--- a/gtk/gtkprivate.h
++++ b/gtk/gtkprivate.h
+@@ -99,6 +99,7 @@ gboolean   gtk_main_do_event
+ GtkWidget *gtk_get_event_widget         (GdkEvent  *event);
+ 
+ guint32    gtk_get_current_event_time   (void);
++GdkEvent * gtk_get_current_event        (void);
+ 
+ void check_crossing_invariants (GtkWidget       *widget,
+                                 GtkCrossingData *crossing);

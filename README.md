@@ -130,7 +130,10 @@ turned off or the extension is disabled.
 **Context menus open on release**, as they do on Windows, and a press
 that travels more than a few pixels is treated as a gesture and opens
 nothing. Opening on press is what stops a right-drag ever reaching the
-thing underneath. There is a setting if you prefer press.
+thing underneath. The same setting switches GNOME Shell's own right-click
+menus — the desktop background, app icons — to release, and `patches/`
+carries the model into GTK 3 and GTK 4 applications, Edge and Firefox.
+There is a setting if you prefer press.
 
 **Also:** a two-line clock, the 12px show-desktop sliver with Windows'
 minimise/restore toggle and Aero Peek, per-workspace window filtering
@@ -168,13 +171,14 @@ Being straight about the gaps:
   and this taskbar shows no tray icons — the log says so plainly. You do
   not need both: this is a full host, not a client of that one.
 * **Release-timed context menus need a GTK patch to go system-wide.**
-  Every menu this extension owns already waits for the release, and so
-  do GNOME Shell's own. But a menu inside a GTK application belongs to
-  GTK, in that application's process. `patches/` has the two small
-  changes that give GTK3 and GTK4 the Windows model, with an
-  explanation of exactly what differs; they have to be built and
-  installed separately. Chromium and Firefox draw their own menus and
-  are unaffected by either.
+  Every menu this extension owns waits for the release, and with the
+  setting on so do GNOME Shell's. But a menu inside a GTK application
+  belongs to GTK, in that application's process. `patches/` has the
+  changes that give GTK 3 and GTK 4 the Windows model, a script that
+  builds them into packages (`tools/build-gtk-debs.sh`), and what differs
+  in detail. Edge takes a Blink switch through its launcher
+  (`tools/edge-context-menu.sh`), which is also what lets its mouse
+  gestures start; Edge's own tab and toolbar menus cannot be changed.
 * **Clipboard history is polled**, because GNOME has no
   clipboard-changed signal. It does paste for you: the shell is the
   compositor, so Clutter will hand out a virtual input device — the same
@@ -299,6 +303,17 @@ gdbus call --session --dest org.gnome.Shell.Extensions.Win11Taskbar \
   --method org.gnome.Shell.Extensions.Win11Taskbar.Trigger start-menu
 ```
 
+Where only real input will do, `Trigger` also takes `pointer:<steps>` and
+plays them through a Clutter virtual pointer — `{"move": [x, y]}`,
+`{"press": 3}`, `{"release": 3}`, `{"wait": ms}`. That is what the
+context-menu tests use, because GTK's menus react to events, not to API
+calls:
+
+```bash
+tools/test-context-menu.py      # GTK 3 and GTK 4, five cases each
+tools/test-edge-context-menu.py # Edge, with a throwaway profile
+```
+
 ## Layout of the source
 
 | File | What lives there |
@@ -327,7 +342,12 @@ gdbus call --session --dest org.gnome.Shell.Extensions.Win11Taskbar \
 | `lib/systemIndicators.js` | Borrowing GNOME's Quick Settings in. |
 | `lib/panel.js` | The surface, the three zones, struts, theming. |
 | `lib/autoHide.js` | Sliding out of the way behind a pressure barrier. |
-| `lib/debugService.js` | Geometry for the tests, plus a trigger for UI that needs a click. Off by default. |
+| `lib/shellMenus.js` | GNOME Shell's own right-click menus, switched to open on release. |
+| `lib/debugService.js` | Geometry for the tests, a trigger for UI that needs a click, a virtual pointer. Off by default. |
+| `patches/` | GTK 3 and GTK 4 patches for release-timed context menus, and why. |
+| `tools/test-context-menu.py`, `tools/ctxprobe/` | End-to-end test of the GTK menu model with real pointer events. |
+| `tools/build-gtk-debs.sh` | Builds the patched GTK packages, amd64 and i386. |
+| `tools/edge-context-menu.sh` | Puts Edge's page menus on mouse-up, through its launcher. |
 
 Two places lay out children by hand rather than with `Clutter.BinLayout`:
 the panel's three zones and the inside of a task button. This is not

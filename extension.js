@@ -14,6 +14,7 @@ import {DebugService} from './lib/debugService.js';
 import {setGettext as setMenuGettext} from './lib/dbusMenu.js';
 import {setGettext} from './lib/jumpList.js';
 import {Taskbar} from './lib/panel.js';
+import {ShellMenus} from './lib/shellMenus.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
@@ -42,6 +43,8 @@ export default class Win11TaskbarExtension extends Extension {
         this._settingsIds = [
             this._settings.connect('changed::multi-monitor', () => this._rebuild()),
             this._settings.connect('changed::hide-top-panel', () => this._syncTopPanel()),
+            this._settings.connect('changed::context-menu-on-release',
+                () => this._syncShellMenus()),
         ];
 
         // One watcher for the whole session, shared by every taskbar.
@@ -50,6 +53,7 @@ export default class Win11TaskbarExtension extends Extension {
 
         this._rebuild();
         this._syncTopPanel();
+        this._syncShellMenus();
 
         if (this._settings.get_boolean('debug-service'))
             this._debug = new DebugService(() => this._taskbars);
@@ -71,6 +75,9 @@ export default class Win11TaskbarExtension extends Extension {
 
         this._debug?.destroy();
         this._debug = null;
+
+        this._shellMenus?.destroy();
+        this._shellMenus = null;
 
         this._destroyTaskbars();
 
@@ -108,6 +115,17 @@ export default class Win11TaskbarExtension extends Extension {
         for (const bar of this._taskbars ?? [])
             bar.destroy();
         this._taskbars = [];
+    }
+
+    /** The shell's own right-click menus follow the same setting as ours. */
+    _syncShellMenus() {
+        const wanted = this._settings.get_boolean('context-menu-on-release');
+        if (wanted && !this._shellMenus) {
+            this._shellMenus = new ShellMenus();
+        } else if (!wanted && this._shellMenus) {
+            this._shellMenus.destroy();
+            this._shellMenus = null;
+        }
     }
 
     _syncTopPanel() {

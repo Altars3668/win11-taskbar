@@ -1,33 +1,251 @@
-Context menus: do not select the item the button is released over
-
-GTK's menus follow the X11 press-drag-release model: pressing opens the
-menu and releasing over an item chooses it, so one press completes the
-selection. Windows uses two steps — releasing opens the menu and leaves
-it there, and a second, separate click chooses.
-
-Someone arriving from Windows lets go of the right button as soon as the
-menu appears and lands on whatever item is under the pointer. GTK3
-already guards the first 500ms against exactly this, which is an
-admission that the model surprises people; this raises the guard past
-any plausible press so that release never selects. Dragging inside an
-already-open menu is unaffected.
-
-Applies to: gtk+3.0 3.24.52
-
---- a/gtk/gtkmenushell.c
-+++ b/gtk/gtkmenushell.c
-@@ -84,7 +84,13 @@
- #include "ubuntu-private.h"
+Description: Context menus open on release, as on Windows
+ GTK applications pop up a context menu from the press of the secondary
+ button, and the menu then follows the X11 press-drag-release model: drag
+ onto an item and let go to choose it. Windows takes two steps. The menu
+ appears when the button is released and stays open until a second,
+ separate click. Someone used to Windows lets go as soon as the menu
+ appears and picks whatever item is under the pointer; GTK's 500ms guard
+ does not help, because it is cleared as soon as the pointer moves into an
+ item.
+ .
+ gtk_main_do_event() now follows the secondary button in event order, and
+ a top-level menu popped up while it is down is held back and shown once
+ the release has been dispatched. No release is left to choose with. A
+ press of another button, a popdown or a drag starting from the press
+ cancels the held-back menu. Menus opened with the primary button,
+ including press-drag-release in menu bars (which Windows has too), and
+ keyboard-opened menus are unchanged.
+Author: AltarsCN <altarscn2@gmail.com>
+Forwarded: not-needed
+Last-Update: 2026-10-03
+---
+--- a/gtk/gtkdnd.c
++++ b/gtk/gtkdnd.c
+@@ -26,6 +26,7 @@
  
+ #include "gtkdnd.h"
+ #include "gtkdndprivate.h"
++#include "gtkmenuprivate.h"
+ #include "gtksettingsprivate.h"
  
--#define MENU_SHELL_TIMEOUT   500
-+/* Windows opens a context menu on release and leaves it there; the
-+ * release that opened it never selects anything. GTK's own guard for
-+ * the first MENU_SHELL_TIMEOUT milliseconds does the same thing for a
-+ * quick press-and-release, so raising it past any plausible press gives
-+ * the Windows model without touching the surrounding logic.
+ #include <math.h>
+@@ -1728,6 +1729,10 @@ gtk_drag_begin_internal (GtkWidget
+   GdkAtom selection;
+   gboolean managed;
+ 
++  /* A drag from a secondary-button press is not a request for the
++   * context menu that press held back. */
++  _gtk_menu_cancel_deferred_popup ();
++
+   managed = gtk_drag_is_managed (widget);
+ 
+   pointer = keyboard = NULL;
+--- a/gtk/gtkmain.c
++++ b/gtk/gtkmain.c
+@@ -119,6 +119,7 @@
+ #include "gtkdndprivate.h"
+ #include "gtkmain.h"
+ #include "gtkmenu.h"
++#include "gtkmenuprivate.h"
+ #include "gtkmodules.h"
+ #include "gtkmodulesprivate.h"
+ #include "gtkprivate.h"
+@@ -1701,6 +1702,9 @@ gtk_main_do_event (GdkEvent *event)
+   GdkDevice *device;
+   GList *tmp_list;
+ 
++  /* Context menus open on release; see gtk_menu_popup_internal(). */
++  _gtk_menu_track_button (event);
++
+   if (event->type == GDK_SETTING)
+     {
+       _gtk_settings_handle_event (&event->setting);
+@@ -1962,6 +1966,8 @@ gtk_main_do_event (GdkEvent *event)
+     }
+ 
+  cleanup:
++  _gtk_menu_show_deferred_popup (event);
++
+   tmp_list = current_events;
+   current_events = g_list_remove_link (current_events, tmp_list);
+   g_list_free_1 (tmp_list);
+--- a/gtk/gtkmenu.c
++++ b/gtk/gtkmenu.c
+@@ -1809,6 +1809,81 @@ associate_menu_grab_transfer_window (Gtk
+   g_object_set_data (G_OBJECT (toplevel_window), I_("gdk-attached-grab-window"), transfer_window);
+ }
+ 
++/* Windows opens a context menu when the secondary button is released.
++ * GTK applications pop theirs up from the press, and the menu then
++ * follows the X11 press-drag-release model: drag onto an item and let go
++ * to choose it. Someone used to Windows lets go as soon as the menu
++ * appears and picks whatever happens to be under the pointer.
++ *
++ * So a top-level menu popped up while the secondary button is down is
++ * held back, and shown once gtk_main_do_event() has dispatched that
++ * button's release. No release is left to choose with, and the menu
++ * waits for a separate click, as on Windows. The button is followed in
++ * event order rather than asked of the device, because the release can
++ * reach GDK before the press has been dispatched.
 + */
-+#define MENU_SHELL_TIMEOUT   2147483
- #define MENU_POPUP_DELAY     225
- #define MENU_POPDOWN_DELAY   1000
++static gboolean secondary_button_down;
++
++static struct
++{
++  GtkMenu             *menu;         /* weak */
++  GdkDevice           *device;
++  GtkWidget           *parent_menu_item;
++  GtkMenuPositionFunc  func;
++  gpointer             data;
++  GDestroyNotify       destroy;
++  guint                button;
++} deferred_popup;
++
++static void
++deferred_popup_clear (gboolean free_data)
++{
++  if (deferred_popup.menu)
++    g_object_remove_weak_pointer (G_OBJECT (deferred_popup.menu),
++                                  (gpointer *) &deferred_popup.menu);
++  if (free_data && deferred_popup.destroy)
++    deferred_popup.destroy (deferred_popup.data);
++  g_clear_object (&deferred_popup.device);
++  g_clear_object (&deferred_popup.parent_menu_item);
++  memset (&deferred_popup, 0, sizeof deferred_popup);
++}
++
++/* A drag, a popdown or another press means the menu is not wanted. */
++void
++_gtk_menu_cancel_deferred_popup (void)
++{
++  deferred_popup_clear (TRUE);
++}
++
++/* Called by gtk_main_do_event() before it dispatches @event. */
++void
++_gtk_menu_track_button (const GdkEvent *event)
++{
++  switch ((guint) event->type)
++    {
++    case GDK_BUTTON_PRESS:
++      _gtk_menu_cancel_deferred_popup ();
++      secondary_button_down =
++        event->button.button == GDK_BUTTON_SECONDARY ||
++        (event->button.state & GDK_BUTTON3_MASK) != 0;
++      break;
++
++    case GDK_MOTION_NOTIFY:
++      /* Recover from a release that never reached us. */
++      if (!(event->motion.state & GDK_BUTTON3_MASK))
++        secondary_button_down = FALSE;
++      break;
++
++    case GDK_BUTTON_RELEASE:
++      if (event->button.button == GDK_BUTTON_SECONDARY)
++        secondary_button_down = FALSE;
++      break;
++
++    default:
++      break;
++    }
++}
++
+ static void
+ gtk_menu_popup_internal (GtkMenu             *menu,
+                          GdkDevice           *device,
+@@ -1834,6 +1909,22 @@ gtk_menu_popup_internal (GtkMenu
+   g_return_if_fail (GTK_IS_MENU (menu));
+   g_return_if_fail (device == NULL || GDK_IS_DEVICE (device));
  
++  if (parent_menu_shell == NULL && secondary_button_down)
++    {
++      deferred_popup_clear (TRUE);
++      deferred_popup.menu = menu;
++      g_object_add_weak_pointer (G_OBJECT (menu),
++                                 (gpointer *) &deferred_popup.menu);
++      deferred_popup.device = device ? g_object_ref (device) : NULL;
++      deferred_popup.parent_menu_item =
++        parent_menu_item ? g_object_ref (parent_menu_item) : NULL;
++      deferred_popup.func = func;
++      deferred_popup.data = data;
++      deferred_popup.destroy = destroy;
++      deferred_popup.button = button;
++      return;
++    }
++
+   _gtk_tooltip_hide_in_display (gtk_widget_get_display (GTK_WIDGET (menu)));
+   display = gtk_widget_get_display (GTK_WIDGET (menu));
+ 
+@@ -2026,6 +2117,46 @@ gtk_menu_popup_internal (GtkMenu
+   _gtk_menu_shell_update_mnemonics (menu_shell);
+ }
+ 
++/* Called by gtk_main_do_event() once it has dispatched @event. */
++void
++_gtk_menu_show_deferred_popup (const GdkEvent *event)
++{
++  GtkMenu *menu = deferred_popup.menu;
++  GdkDevice *device;
++  GtkWidget *parent_menu_item;
++  GtkMenuPositionFunc func;
++  gpointer data;
++  GDestroyNotify destroy;
++  guint button;
++
++  if (event->type != GDK_BUTTON_RELEASE ||
++      event->button.button != GDK_BUTTON_SECONDARY)
++    return;
++
++  if (menu == NULL)
++    {
++      deferred_popup_clear (TRUE);
++      return;
++    }
++
++  /* The position data passes to the menu, so keep it alive. */
++  device = deferred_popup.device ? g_object_ref (deferred_popup.device) : NULL;
++  parent_menu_item = deferred_popup.parent_menu_item ?
++    g_object_ref (deferred_popup.parent_menu_item) : NULL;
++  func = deferred_popup.func;
++  data = deferred_popup.data;
++  destroy = deferred_popup.destroy;
++  button = deferred_popup.button;
++  deferred_popup_clear (FALSE);
++
++  gtk_menu_popup_internal (menu, device, NULL, parent_menu_item,
++                           func, data, destroy, button,
++                           gdk_event_get_time (event));
++
++  g_clear_object (&device);
++  g_clear_object (&parent_menu_item);
++}
++
+ /**
+  * gtk_menu_popup_for_device:
+  * @menu: a #GtkMenu
+@@ -2518,6 +2649,9 @@ gtk_menu_popdown (GtkMenu *menu)
+ 
+   g_return_if_fail (GTK_IS_MENU (menu));
+ 
++  if (deferred_popup.menu == menu)
++    _gtk_menu_cancel_deferred_popup ();
++
+   menu_shell = GTK_MENU_SHELL (menu);
+   priv = menu->priv;
+ 
+--- a/gtk/gtkmenuprivate.h
++++ b/gtk/gtkmenuprivate.h
+@@ -150,6 +150,13 @@ void gtk_menu_update_scroll_offset (GtkM
+                                     gboolean            flipped_y,
+                                     gpointer            user_data);
+ 
++G_GNUC_INTERNAL
++void _gtk_menu_track_button          (const GdkEvent *event);
++G_GNUC_INTERNAL
++void _gtk_menu_show_deferred_popup   (const GdkEvent *event);
++G_GNUC_INTERNAL
++void _gtk_menu_cancel_deferred_popup (void);
++
+ G_END_DECLS
+ 
+ #endif /* __GTK_MENU_PRIVATE_H__ */
