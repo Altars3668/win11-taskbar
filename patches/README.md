@@ -114,8 +114,13 @@ launcher.
 
 ```bash
 tools/build-gtk-debs.sh          # fetches Ubuntu's source, patches, builds
+JOBS=12 tools/build-gtk-debs.sh  # faster, when the machine is otherwise idle
 sudo apt-get install …           # the command it prints at the end
 ```
+
+It runs at idle priority with 4 jobs by default, which also caps each LTO
+link at 4 processes: at full width the LTO links fan out to one process
+per CPU each, and the machine runs out of memory.
 
 It versions the packages `<ubuntu version>+altarscnN` and builds every
 package of both sources for amd64, plus `libgtk-3-0t64` for i386 in an

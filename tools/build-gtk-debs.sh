@@ -11,6 +11,12 @@
 # both for amd64 — plus libgtk-3-0t64 for i386 in a chroot when that is
 # installed, since Multi-Arch: same makes it carry the amd64 version.
 # Nothing is installed; the apt command that would is printed at the end.
+#
+# It runs gently by default, JOBS=4 at idle priority: Ubuntu builds GTK with
+# -flto=auto, and each LTO link then fans out to one process per CPU, so
+# with many links in flight a full-width build had the load past 150 and
+# memory gone. JOBS caps both the ninja jobs and each link's LTO
+# partitions. The i386 chroot is shared between builds (CHROOT=...).
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -21,7 +27,12 @@ MIRROR=$(grep -m1 -oP '^URIs:\s*\K\S+' /etc/apt/sources.list.d/ubuntu.sources 2>
 PATCH=windows-context-menu-model.patch
 export QUILT_PATCHES=debian/patches
 export DEBFULLNAME=${DEBFULLNAME:-AltarsCN} DEBEMAIL=${DEBEMAIL:-altarscn2@gmail.com}
-export DEB_BUILD_OPTIONS="nocheck nodoc parallel=$(( $(nproc) / 2 ))"
+JOBS=${JOBS:-4}
+export DEB_BUILD_OPTIONS="nocheck nodoc parallel=$JOBS"
+# The last -flto wins, so this caps the LTO fan-out without turning LTO off.
+export DEB_CFLAGS_MAINT_APPEND="-flto=$JOBS" DEB_CXXFLAGS_MAINT_APPEND="-flto=$JOBS"
+export DEB_LDFLAGS_MAINT_APPEND="-flto=$JOBS"
+renice -n 19 -p $$ >/dev/null; ionice -c 2 -n 7 -p $$
 
 mkdir -p "$B" && cd "$B"
 sudo apt-get build-dep -y -q -P nocheck,nodoc,noudeb,noinsttest gtk+3.0 gtk4 >/dev/null
@@ -60,14 +71,14 @@ fi
 build() {
     local profiles="nocheck nodoc noudeb"
     [[ $1 == gtk4* ]] && profiles+=" noinsttest"
-    (cd "$B/$1" && DEB_BUILD_PROFILES="$profiles" nice -n 10 dpkg-buildpackage -b -uc -us) \
+    (cd "$B/$1" && DEB_BUILD_PROFILES="$profiles" dpkg-buildpackage -b -uc -us) \
         > "$B/$1-build.log" 2>&1 || { echo "build failed, see $B/$1-build.log" >&2; exit 1; }
 }
 build "$GTK4"
 build "$GTK3"
 
 if [ -n "$WANT_I386" ]; then
-    CH=$B/chroot-i386
+    CH=${CHROOT:-$(dirname "$B")/chroot-$SUITE-i386}
     if [ ! -d "$CH" ]; then
         command -v mmdebstrap >/dev/null || sudo apt-get install -y -q mmdebstrap
         sudo mmdebstrap --variant=buildd --arch=i386 --components=main,universe \
@@ -80,11 +91,13 @@ if [ -n "$WANT_I386" ]; then
     nspawn() {
         sudo systemd-nspawn -q -D "$CH" --timezone=off --bind="$B/i386:/build" \
             --setenv=DEBIAN_FRONTEND=noninteractive --setenv=DEB_BUILD_OPTIONS="$DEB_BUILD_OPTIONS" \
+            --setenv=DEB_CFLAGS_MAINT_APPEND="$DEB_CFLAGS_MAINT_APPEND" \
+            --setenv=DEB_LDFLAGS_MAINT_APPEND="$DEB_LDFLAGS_MAINT_APPEND" \
             --setenv=DEB_BUILD_PROFILES="nocheck nodoc noudeb" "$@"
     }
     nspawn /bin/bash -c "dpkg --configure -a; apt-get update -q && apt-get build-dep -y -q \
         --no-install-recommends -P nocheck,nodoc,noudeb /build/$GTK3" > "$B/i386-deps.log" 2>&1
-    nspawn /bin/bash -c "cd /build/$GTK3 && nice -n 10 dpkg-buildpackage -B -uc -us" \
+    nspawn /bin/bash -c "cd /build/$GTK3 && nice -n 19 ionice -c 2 -n 7 dpkg-buildpackage -B -uc -us" \
         > "$B/i386-build.log" 2>&1 || { echo "i386 build failed, see $B/i386-build.log" >&2; exit 1; }
     sudo chown -R "$(id -u):$(id -g)" "$B/i386"
 fi
