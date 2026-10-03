@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """GTK4 context-menu probe for tools/test-context-menu.sh.
 
 A maximized window: right-pressing the canvas pops up a PopoverMenu at the
@@ -64,7 +64,13 @@ class Probe(Gtk.Application):
 
         win = Gtk.ApplicationWindow(application=self, title='ctxprobe4')
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.append(Gtk.PopoverMenuBar.new_from_model(bar_menu))
+        header = Gtk.Box()
+        header.append(Gtk.PopoverMenuBar.new_from_model(bar_menu))
+        # A drop-down button: its menu must keep the press that closes it,
+        # or a second click on the button would open the menu again.
+        drop = Gtk.MenuButton(label='Drop', menu_model=menu)
+        header.append(drop)
+        box.append(header)
         canvas = Gtk.Box(hexpand=True, vexpand=True)
         box.append(canvas)
         win.set_child(box)
@@ -95,6 +101,10 @@ class Probe(Gtk.Application):
             for button in model_buttons(popover):
                 watch_hover(button, button.get_property('text'))
 
+        any_button = Gtk.GestureClick(button=0)
+        any_button.connect('pressed', lambda g, *_: log('PRESS', g.get_current_button()))
+        canvas.add_controller(any_button)
+
         gesture = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
         gesture.connect('pressed', pressed)
         canvas.add_controller(gesture)
@@ -106,7 +116,7 @@ class Probe(Gtk.Application):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         def ready():
-            item = box.get_first_child().get_first_child()
+            item = box.get_first_child().get_first_child().get_first_child()
             while item and 'Item' not in item.__gtype__.name:
                 item = item.get_first_child()
             ok, b = item.compute_bounds(win)
@@ -115,8 +125,13 @@ class Probe(Gtk.Application):
                 int(b.size.width), int(b.size.height))
             # The menu bar builds its menus up front, so its items can be
             # watched now; the context menu's are watched as it pops up.
-            for button in model_buttons(box.get_first_child()):
+            for button in model_buttons(header):
                 watch_hover(button, button.get_property('text'))
+            ok, b = drop.compute_bounds(win)
+            log('GEOM drop', int(b.origin.x + sx), int(b.origin.y + sy),
+                int(b.size.width), int(b.size.height))
+            drop.get_popover().connect('map', lambda *_: log('DROP SHOWN'))
+            drop.get_popover().connect('closed', lambda *_: log('DROP CLOSED'))
             log('READY', loaded_gtk())
             return False
 

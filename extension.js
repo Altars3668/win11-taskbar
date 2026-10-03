@@ -51,9 +51,11 @@ export default class Win11TaskbarExtension extends Extension {
         if (this._settings.get_boolean('show-tray'))
             this._statusHost = new StatusNotifierHost();
 
+        // Before the taskbars: their menu managers bind the shell's handler
+        // when they are made, and should get the one lib/shellMenus.js wraps.
+        this._syncShellMenus();
         this._rebuild();
         this._syncTopPanel();
-        this._syncShellMenus();
 
         if (this._settings.get_boolean('debug-service'))
             this._debug = new DebugService(() => this._taskbars);

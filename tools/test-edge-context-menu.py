@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """Check when Edge opens its context menu, inside the headless test shell.
 
     tools/test-edge-context-menu.py [--flag=--blink-settings=showContextMenuOnMouseUp=true]
@@ -71,7 +71,7 @@ def shoot(shell, prefix, name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--flag', action='append', default=[])
-    ap.add_argument('--case', choices=('click', 'gesture'), default='click')
+    ap.add_argument('--case', choices=('click', 'gesture', 'reopen'), default='click')
     ap.add_argument('--edge', default=EDGE,
                     help='what to run; /usr/bin/microsoft-edge-dev tests the installed launcher')
     ap.add_argument('--shot', help='screenshot path prefix')
@@ -131,6 +131,20 @@ def main():
             shoot(shell, args.shot, 'release')
             print(f'after press:   events={after_press[0]!r:40} menu={after_press[1]}')
             print(f'after release: events={after_release[0]!r:40} menu={after_release[1]}')
+        elif args.case == 'reopen':
+            # Windows: a right click elsewhere while the menu is open closes
+            # it and opens a new one there, in that one click.
+            other = (at[0] - 250, at[1] + 200)
+            shell.pointer([{'move': list(at)}, {'wait': 200}, {'press': 3}, {'wait': 60},
+                           {'release': 3}, {'wait': 700}])
+            first = (page_events(shell), [w['buffer'] for w in popups(shell)])
+            shoot(shell, args.shot, 'first')
+            shell.pointer([{'move': list(other)}, {'wait': 200}, {'press': 3}, {'wait': 60},
+                           {'release': 3}, {'wait': 900}])
+            second = (page_events(shell), [w['buffer'] for w in popups(shell)])
+            shoot(shell, args.shot, 'second')
+            print(f'first click at {at}:  events={first[0]!r} menus={first[1]}')
+            print(f'second click at {other}: events={second[0]!r} menus={second[1]}')
         else:
             # Edge's Back gesture: hold the right button and draw leftwards.
             steps = [{'move': list(at)}, {'wait': 200}, {'press': 3}, {'wait': 80}]

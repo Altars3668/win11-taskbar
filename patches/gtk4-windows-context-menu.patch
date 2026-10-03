@@ -1,4 +1,4 @@
-Description: Context menus open on release, as on Windows
+Description: Context menus the Windows way: open on release, click through to close
  GTK applications pop up a context menu from the press of the secondary
  button, and the menu then follows the X11 press-drag-release model: drag
  onto an item and let go to choose it. Windows takes two steps. The menu
@@ -9,14 +9,19 @@ Description: Context menus open on release, as on Windows
  gtk_popover_popup() called while gtk_main_do_event() is dispatching a
  press of the secondary button now holds the popover back, and shows it
  once that button's release has been dispatched. Another press, a popdown
- or a drag starting from the press cancels it.
+ or a drag starting from the press cancels it. GtkModelButton also ignores
+ unpaired releases of the secondary button, which GtkGestureClick emits
+ before its button filter runs.
  .
- GtkModelButton also ignores unpaired releases of the secondary button.
- GtkGestureClick emits unpaired-release before its button filter runs, so
- the release of a right press that opened a menu by some other route would
- otherwise still choose the item under the pointer. Primary-button
- press-drag-release, which menu bars rely on and Windows also has, ordinary
- clicks and keyboard activation are unchanged.
+ On Windows a press outside an open context menu also closes the menu and
+ still reaches what is under the pointer: a right click elsewhere opens a
+ menu there in one click, a left click elsewhere acts there. GDK's
+ check_autohide() spent every such press on hiding the popups. It now lets
+ a button press on another of the application's surfaces through, and
+ gtk_main_do_event() pops the popover down before routing the press, so
+ that its grab has gone. A context menu, a popover shown on a
+ secondary-button release, then lets the press through; any other popover
+ keeps it, so a click on the button that opened a menu only closes it.
 Author: AltarsCN <altarscn2@gmail.com>
 Forwarded: not-needed
 Last-Update: 2026-10-03
@@ -82,7 +87,37 @@ Last-Update: 2026-10-03
    if (is_pointing_event (event))
      {
        target_widget = handle_pointing_event (event);
-@@ -1800,6 +1804,8 @@ gtk_main_do_event (GdkEvent *event)
+@@ -1698,6 +1702,29 @@ gtk_main_do_event (GdkEvent *event)
+   /* check whether there is a grab in effect... */
+   grab_widget = gtk_window_group_get_current_grab (window_group);
+ 
++  /* A press outside an autohide popover, which GDK has already hidden.
++   * Pop the popover down now, so that its grab is gone before the press is
++   * routed. A context menu then lets the press through to what it landed
++   * on, as Windows does: a right click elsewhere opens a menu there, a left
++   * click elsewhere acts there. Any other popover keeps the press, so a
++   * click on the button that opened a menu only closes that menu.
++   */
++  if (gdk_event_get_event_type (event) == GDK_BUTTON_PRESS)
++    {
++      while (GTK_IS_POPOVER (grab_widget) &&
++             gtk_popover_get_autohide (GTK_POPOVER (grab_widget)) &&
++             target_widget != grab_widget &&
++             !gtk_widget_is_ancestor (target_widget, grab_widget))
++        {
++          gboolean through = gtk_popover_is_context_menu (GTK_POPOVER (grab_widget));
++
++          gtk_popover_popdown (GTK_POPOVER (grab_widget));
++          if (!through)
++            goto cleanup;
++          grab_widget = gtk_window_group_get_current_grab (window_group);
++        }
++    }
++
+   /* If the grab widget is an ancestor of the event widget
+    * then we send the event to the original event widget.
+    * This is the key to implementing modality. This also applies
+@@ -1800,6 +1827,8 @@ gtk_main_do_event (GdkEvent *event)
    g_object_unref (target_widget);
  
   cleanup:
@@ -91,7 +126,7 @@ Last-Update: 2026-10-03
    tmp_list = current_events;
    current_events = g_list_remove_link (current_events, tmp_list);
    g_list_free_1 (tmp_list);
-@@ -1922,6 +1928,13 @@ gtk_grab_remove (GtkWidget *widget)
+@@ -1922,6 +1951,13 @@ gtk_grab_remove (GtkWidget *widget)
      }
  }
  
@@ -107,7 +142,23 @@ Last-Update: 2026-10-03
  {
 --- a/gtk/gtkpopover.c
 +++ b/gtk/gtkpopover.c
-@@ -2408,11 +2408,68 @@ gtk_popover_get_autohide (GtkPopover *po
+@@ -177,6 +177,7 @@ typedef struct {
+   gboolean has_arrow;
+   gboolean mnemonics_visible;
+   gboolean cascade_popdown;
++  gboolean context_menu;      /* shown on a secondary-button release */
+ 
+   int x_offset;
+   int y_offset;
+@@ -1231,6 +1232,7 @@ gtk_popover_unmap (GtkWidget *widget)
+ 
+   if (priv->autohide)
+     gtk_grab_remove (widget);
++  priv->context_menu = FALSE;
+ 
+   parent = gtk_widget_get_parent (widget);
+   gtk_widget_remove_surface_transform_changed_callback (parent,
+@@ -2408,11 +2410,80 @@ gtk_popover_get_autohide (GtkPopover *po
   *
   * Pops @popover up.
   */
@@ -152,8 +203,20 @@ Last-Update: 2026-10-03
 +
 +  popover = g_object_ref (deferred_popover);
 +  gtk_popover_cancel_deferred ();
++  ((GtkPopoverPrivate *) gtk_popover_get_instance_private (popover))->context_menu = TRUE;
 +  gtk_widget_set_visible (GTK_WIDGET (popover), TRUE);
 +  g_object_unref (popover);
++}
++
++/* Whether @popover is a context menu: one popped up from a press of the
++ * secondary button and shown on its release. gtk_main_do_event() lets a
++ * press outside such a popover through to what it landed on. */
++gboolean
++gtk_popover_is_context_menu (GtkPopover *popover)
++{
++  GtkPopoverPrivate *priv = gtk_popover_get_instance_private (popover);
++
++  return priv->context_menu;
 +}
 +
  void
@@ -176,7 +239,7 @@ Last-Update: 2026-10-03
    gtk_widget_set_visible (GTK_WIDGET (popover), TRUE);
  }
  
-@@ -2461,6 +2518,9 @@ gtk_popover_popdown (GtkPopover *popover
+@@ -2461,6 +2532,9 @@ gtk_popover_popdown (GtkPopover *popover
  {
    g_return_if_fail (GTK_IS_POPOVER (popover));
  
@@ -188,13 +251,14 @@ Last-Update: 2026-10-03
  
 --- a/gtk/gtkpopoverprivate.h
 +++ b/gtk/gtkpopoverprivate.h
-@@ -23,5 +23,9 @@ G_BEGIN_DECLS
+@@ -23,5 +23,10 @@ G_BEGIN_DECLS
  
  GtkWidget *gtk_popover_get_contents_widget (GtkPopover *popover);
  
 +void gtk_popover_track_button     (GdkEvent *event);
 +void gtk_popover_show_deferred    (GdkEvent *event);
 +void gtk_popover_cancel_deferred  (void);
++gboolean gtk_popover_is_context_menu (GtkPopover *popover);
 +
  G_END_DECLS
  
@@ -208,3 +272,18 @@ Last-Update: 2026-10-03
  
  void check_crossing_invariants (GtkWidget       *widget,
                                  GtkCrossingData *crossing);
+--- a/gdk/gdksurface.c
++++ b/gdk/gdksurface.c
+@@ -2906,7 +2906,11 @@ check_autohide (GdkEvent *event)
+                 }
+               while (surface->autohide && surface != event_surface);
+ 
+-              return TRUE;
++              /* A button press on another of our surfaces goes on to it.
++               * The toolkit decides whether the press that dismissed the
++               * popups also acts there, as Windows does for context menus.
++               */
++              return evtype != GDK_BUTTON_PRESS || event_surface == NULL;
+             }
+         }
+       break;

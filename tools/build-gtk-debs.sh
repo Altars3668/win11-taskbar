@@ -103,15 +103,20 @@ if [ -n "$WANT_I386" ]; then
 fi
 
 # The packages from these sources that are installed now, at the new version.
-debs=()
-while read -r pkg; do
-    name=${pkg%%:*} arch=${pkg#*:}
-    [[ $arch == "$pkg" ]] && arch=
-    deb=$(ls "$B"/"${name}"_*+altarscn*_{${arch:-amd64},all}.deb \
-             "$B"/i386/"${name}"_*+altarscn*_"${arch:-none}".deb 2>/dev/null | sort -V | tail -1)
-    [ -n "$deb" ] && debs+=("$deb")
-done < <(dpkg-query -W -f='${binary:Package} ${source:Package} ${db:Status-Status}\n' |
-         awk '($2 == "gtk+3.0" || $2 == "gtk4") && $3 == "installed" {print $1}')
+install_list() {
+    local pkg name arch found=() debs=()
+    shopt -s nullglob
+    while read -r pkg; do
+        name=${pkg%%:*} arch=${pkg#*:}
+        [[ $arch == "$pkg" ]] && arch=
+        found=("$B"/"${name}"_*+altarscn*_{${arch:-amd64},all}.deb
+               "$B"/i386/"${name}"_*+altarscn*_"${arch:-none}".deb)
+        (( ${#found[@]} )) && debs+=("$(printf '%s\n' "${found[@]}" | sort -V | tail -1)")
+    done < <(dpkg-query -W -f='${binary:Package} ${source:Package} ${db:Status-Status}\n' |
+             awk '($2 == "gtk+3.0" || $2 == "gtk4") && $3 == "installed" {print $1}')
+    shopt -u nullglob
+    echo "${debs[*]}"
+}
 echo
 echo "Built in $B. Install with:"
-echo "  sudo apt-get install ${debs[*]}"
+echo "  sudo apt-get install $(install_list)"

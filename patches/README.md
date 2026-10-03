@@ -25,15 +25,21 @@ purpose as soon as the pointer moves into an item; GTK 4 has none.
 Holding the menu back until the release fixes both at once: there is no
 release left to choose with.
 
+The third difference is how a menu goes away. On Windows a press outside an
+open context menu closes it and still lands: a right click elsewhere opens
+a menu there in one click, a left click elsewhere acts there. GTK and the
+shell spend that press on closing the menu, so the next right click is
+needed to open one where you meant.
+
 ## What changes where
 
 | Layer | How | Where |
 |---|---|---|
-| GTK 3 applications, the DING desktop included | a top-level menu popped up while the right button is down is shown when it is released | `gtk3-windows-context-menu.patch` |
-| GTK 4 applications | a popover popped up from a right press is shown on its release; unpaired right releases never click | `gtk4-windows-context-menu.patch` |
-| GNOME Shell's own menus (desktop background, app icons) | `recognize-on-press` turned off on their right-click gestures | `lib/shellMenus.js`, setting `context-menu-on-release` |
+| GTK 3 applications, the DING desktop included | a top-level menu popped up while the right button is down is shown when it is released; a press outside a context menu closes it and still lands | `gtk3-windows-context-menu.patch` |
+| GTK 4 applications | a popover popped up from a right press is shown on its release; unpaired right releases never click; a press outside a context menu closes it and still lands | `gtk4-windows-context-menu.patch` |
+| GNOME Shell's own menus (desktop background, app icons) | `recognize-on-press` turned off on their right-click gestures; a right click outside an open menu reaches what it landed on | `lib/shellMenus.js`, setting `context-menu-on-release` |
 | This extension's menus | opened on release | `lib/taskButton.js`, `lib/shellButtons.js`, `lib/trayArea.js` |
-| Microsoft Edge, page content | `--blink-settings=showContextMenuOnMouseUp=true` through Edge's launcher | `tools/edge-context-menu.sh` |
+| Microsoft Edge, page content | `--blink-settings=showContextMenuOnMouseUp=true` through Edge's launcher; a right click outside its menu already opens a new one there | `tools/edge-context-menu.sh` |
 | Firefox | `ui.context_menus.after_mouseup` in the profile's `user.js` | per profile |
 
 ## How the GTK patches work
@@ -65,9 +71,45 @@ GtkGestureClick emits `unpaired-release` before its button filter runs, so
 without this the release of a right press that opened a menu some other
 way would still choose the item under the pointer.
 
+**A press outside a context menu.** In GTK 3, during a menu's grab GDK
+reports such a press on the menu's own window, at coordinates outside it,
+and the menu shell spends it on closing. `gtk_main_do_event()` now asks the
+device which window the pointer is really over; if that is not inside the
+context menu, the menu is cancelled as Escape would cancel it, and a copy
+of the press is dispatched to that window.
+
+In GTK 4 the press is spent earlier, in GDK: `check_autohide()` hides the
+autohide popups and consumes the event. It now lets a button press on
+another of the application's surfaces through, and `gtk_main_do_event()`
+pops the popover down synchronously before routing the press — GDK hides
+the surface from an idle, so the popover's grab would still be in place.
+
+Only context menus pass the press on: menus shown on a secondary-button
+release. A menu dropped down from a button keeps it, as before, so a click
+on that button closes its menu instead of opening it again.
+
 **Unchanged** in both: menus opened with the primary button, including
 press-drag-release in menu bars and combo boxes (Windows has that too),
 keyboard-opened menus, and touch.
+
+## The shell's menus
+
+`lib/shellMenus.js` does the shell's half while `context-menu-on-release`
+is on. GNOME Shell 50 recognises right clicks on the desktop background and
+on app icons with a `ClickGesture` that has `recognize-on-press` set; it is
+turned off on those gestures, existing and new.
+
+A right click outside an open `PopupMenu` closes the menu and stops there.
+Putting a copy of the press back on Clutter's queue does not help while the
+button is down: Clutter sends a held button's events where its press went,
+which is the menu. So an event filter — filters run before grabs — waits
+for the release and then puts press and release back together; the menu
+has gone by then, and both reach what is under the pointer. Menu managers
+bind the shell's handler when a menu is added, so the extension wraps it
+before it builds its taskbars. Left clicks keep the shell's behaviour.
+
+Edge needs nothing for this part: its menu controller already passes a
+right click outside the menu on to the page, which opens a new menu there.
 
 ## What is not covered
 
@@ -99,16 +141,23 @@ and release events. For each of GTK 3 and GTK 4:
 | `quick` | right click in place: menu on release; a left click on the item chooses it |
 | `hold` | right-press held 800 ms: no menu until the release, then it stays |
 | `dismiss` | right click, then a left click far away: the menu closes and chooses nothing — so a menu shown after the release still holds its popup grab |
+| `reopen` | right click, then a right click somewhere else: the menu closes and a new one opens there, in that one click |
+| `passthrough` | right click, then a left click somewhere else: the menu closes and the click still reaches what is under it |
+| `dropdown` | click a menu button, then click it again: its menu opens once and closes, and does not reopen |
 | `menubar` | left-press File, drag onto the first item, release: chosen |
 
 `--gtk3-lib DIR --gtk4-lib DIR` tests a build tree before installing it;
-`--expect-original` reports the stock behaviour instead of failing on it.
+`--expect-original` reports the stock behaviour instead of failing on it;
+`--taskbar` checks the shell's half on the taskbar instead: right-click one
+task button, then another, and the second jump list opens in that click
+(after `tools/testbed.sh apps`).
 
 `tools/test-edge-context-menu.py` does the same for Edge, with a throwaway
 profile: when the page sees `mousedown`, `mouseup` and `contextmenu`, when
-the menu window appears, and whether a right-drag to the left goes back
-without a menu. `--edge /usr/bin/microsoft-edge-dev` tests the installed
-launcher.
+the menu window appears, whether a right-drag to the left goes back
+without a menu, and (`--case reopen`) whether a second right click
+elsewhere opens a new menu there. `--edge /usr/bin/microsoft-edge-dev`
+tests the installed launcher.
 
 ## Building and installing
 

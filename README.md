@@ -133,6 +133,8 @@ nothing. Opening on press is what stops a right-drag ever reaching the
 thing underneath. The same setting switches GNOME Shell's own right-click
 menus — the desktop background, app icons — to release, and `patches/`
 carries the model into GTK 3 and GTK 4 applications, Edge and Firefox.
+With a menu open, a right click somewhere else closes it and opens the
+menu there in the same click, as Windows does, instead of only closing it.
 There is a setting if you prefer press.
 
 **Also:** a two-line clock, the 12px show-desktop sliver with Windows'

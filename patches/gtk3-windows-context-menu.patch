@@ -1,4 +1,4 @@
-Description: Context menus open on release, as on Windows
+Description: Context menus the Windows way: open on release, click through to close
  GTK applications pop up a context menu from the press of the secondary
  button, and the menu then follows the X11 press-drag-release model: drag
  onto an item and let go to choose it. Windows takes two steps. The menu
@@ -12,9 +12,17 @@ Description: Context menus open on release, as on Windows
  a top-level menu popped up while it is down is held back and shown once
  the release has been dispatched. No release is left to choose with. A
  press of another button, a popdown or a drag starting from the press
- cancels the held-back menu. Menus opened with the primary button,
- including press-drag-release in menu bars (which Windows has too), and
- keyboard-opened menus are unchanged.
+ cancels the held-back menu.
+ .
+ On Windows a press outside an open context menu also closes the menu and
+ still reaches what is under the pointer, so a right click elsewhere opens
+ a menu there in one click and a left click elsewhere acts there. GTK
+ spends that press on closing the menu. During the menu's grab GDK reports
+ such a press on the menu's own window, so the window under the pointer is
+ asked of the device; the menu is cancelled, as Escape would, and the press
+ is dispatched to that window. Menus dropped down from a button, menu bars
+ and keyboard-opened menus keep their behaviour, so a click on the button
+ that opened a menu only closes it.
 Author: AltarsCN <altarscn2@gmail.com>
 Forwarded: not-needed
 Last-Update: 2026-10-03
@@ -50,17 +58,20 @@ Last-Update: 2026-10-03
  #include "gtkmodules.h"
  #include "gtkmodulesprivate.h"
  #include "gtkprivate.h"
-@@ -1701,6 +1702,9 @@ gtk_main_do_event (GdkEvent *event)
+@@ -1701,6 +1702,12 @@ gtk_main_do_event (GdkEvent *event)
    GdkDevice *device;
    GList *tmp_list;
  
-+  /* Context menus open on release; see gtk_menu_popup_internal(). */
++  /* Context menus open on release, and a press outside one still acts;
++   * see gtk_menu_popup_internal() and _gtk_menu_dismiss_for_press(). */
 +  _gtk_menu_track_button (event);
++  if (_gtk_menu_dismiss_for_press (event))
++    return;
 +
    if (event->type == GDK_SETTING)
      {
        _gtk_settings_handle_event (&event->setting);
-@@ -1962,6 +1966,8 @@ gtk_main_do_event (GdkEvent *event)
+@@ -1962,6 +1969,8 @@ gtk_main_do_event (GdkEvent *event)
      }
  
   cleanup:
@@ -71,7 +82,7 @@ Last-Update: 2026-10-03
    g_list_free_1 (tmp_list);
 --- a/gtk/gtkmenu.c
 +++ b/gtk/gtkmenu.c
-@@ -1809,6 +1809,81 @@ associate_menu_grab_transfer_window (Gtk
+@@ -1809,6 +1809,149 @@ associate_menu_grab_transfer_window (Gtk
    g_object_set_data (G_OBJECT (toplevel_window), I_("gdk-attached-grab-window"), transfer_window);
  }
  
@@ -89,6 +100,9 @@ Last-Update: 2026-10-03
 + * reach GDK before the press has been dispatched.
 + */
 +static gboolean secondary_button_down;
++
++/* The context menu on screen, if any; see _gtk_menu_dismiss_for_press(). */
++static GtkMenu *shown_context_menu;
 +
 +static struct
 +{
@@ -150,10 +164,75 @@ Last-Update: 2026-10-03
 +    }
 +}
 +
++/* Whether @target is inside @root or one of its submenus. */
++static gboolean
++menu_contains (GtkMenu   *root,
++               GtkWidget *target)
++{
++  GtkWidget *toplevel = gtk_widget_get_toplevel (target);
++  GtkWidget *shell = GTK_IS_BIN (toplevel) ? gtk_bin_get_child (GTK_BIN (toplevel)) : NULL;
++
++  for (; GTK_IS_MENU_SHELL (shell); shell = GTK_MENU_SHELL (shell)->priv->parent_menu_shell)
++    if (shell == GTK_WIDGET (root))
++      return TRUE;
++
++  return FALSE;
++}
++
++/* The other half of the Windows model. There, a press outside an open
++ * context menu closes it and still goes to whatever is under the pointer:
++ * a right click elsewhere opens the menu there in one click, and a left
++ * click elsewhere acts there. GTK spends that press on closing the menu.
++ *
++ * Called by gtk_main_do_event() before it works out where a press goes.
++ * Where the press landed is asked of the device, because during the menu's
++ * grab GDK reports it on the menu's own window, at coordinates outside it.
++ * Cancelling the menu releases the grab; the press is then sent to the
++ * window it landed on, and %TRUE says it has been dispatched. Only context
++ * menus: a click on the button that dropped a menu down must close that
++ * menu, not open it again.
++ */
++gboolean
++_gtk_menu_dismiss_for_press (GdkEvent *event)
++{
++  GtkMenu *menu = shown_context_menu;
++  GtkWidget *target = NULL;
++  GdkDevice *device;
++  GdkWindow *under;
++  GdkEvent *moved;
++  gdouble x, y;
++
++  if (event->type != GDK_BUTTON_PRESS || menu == NULL ||
++      !GTK_MENU_SHELL (menu)->priv->active)
++    return FALSE;
++
++  device = gdk_event_get_device (event);
++  under = device ? gdk_device_get_window_at_position_double (device, &x, &y) : NULL;
++  if (under)
++    gdk_window_get_user_data (under, (gpointer *) &target);
++  if (target == NULL || menu_contains (menu, target))
++    return FALSE;
++
++  gtk_menu_shell_cancel (GTK_MENU_SHELL (menu));
++
++  if (event->any.window == under)
++    return FALSE;
++
++  moved = gdk_event_copy (event);
++  g_object_unref (moved->any.window);
++  moved->any.window = g_object_ref (under);
++  moved->button.x = x;
++  moved->button.y = y;
++  gtk_main_do_event (moved);
++  gdk_event_free (moved);
++
++  return TRUE;
++}
++
  static void
  gtk_menu_popup_internal (GtkMenu             *menu,
                           GdkDevice           *device,
-@@ -1834,6 +1909,22 @@ gtk_menu_popup_internal (GtkMenu
+@@ -1834,6 +1977,25 @@ gtk_menu_popup_internal (GtkMenu
    g_return_if_fail (GTK_IS_MENU (menu));
    g_return_if_fail (device == NULL || GDK_IS_DEVICE (device));
  
@@ -173,10 +252,13 @@ Last-Update: 2026-10-03
 +      return;
 +    }
 +
++  if (parent_menu_shell == NULL && button == GDK_BUTTON_SECONDARY)
++    g_set_weak_pointer (&shown_context_menu, menu);
++
    _gtk_tooltip_hide_in_display (gtk_widget_get_display (GTK_WIDGET (menu)));
    display = gtk_widget_get_display (GTK_WIDGET (menu));
  
-@@ -2026,6 +2117,46 @@ gtk_menu_popup_internal (GtkMenu
+@@ -2026,6 +2188,46 @@ gtk_menu_popup_internal (GtkMenu
    _gtk_menu_shell_update_mnemonics (menu_shell);
  }
  
@@ -223,19 +305,21 @@ Last-Update: 2026-10-03
  /**
   * gtk_menu_popup_for_device:
   * @menu: a #GtkMenu
-@@ -2518,6 +2649,9 @@ gtk_menu_popdown (GtkMenu *menu)
+@@ -2518,6 +2720,11 @@ gtk_menu_popdown (GtkMenu *menu)
  
    g_return_if_fail (GTK_IS_MENU (menu));
  
 +  if (deferred_popup.menu == menu)
 +    _gtk_menu_cancel_deferred_popup ();
++  if (shown_context_menu == menu)
++    g_clear_weak_pointer (&shown_context_menu);
 +
    menu_shell = GTK_MENU_SHELL (menu);
    priv = menu->priv;
  
 --- a/gtk/gtkmenuprivate.h
 +++ b/gtk/gtkmenuprivate.h
-@@ -150,6 +150,13 @@ void gtk_menu_update_scroll_offset (GtkM
+@@ -150,6 +150,15 @@ void gtk_menu_update_scroll_offset (GtkM
                                      gboolean            flipped_y,
                                      gpointer            user_data);
  
@@ -245,6 +329,8 @@ Last-Update: 2026-10-03
 +void _gtk_menu_show_deferred_popup   (const GdkEvent *event);
 +G_GNUC_INTERNAL
 +void _gtk_menu_cancel_deferred_popup (void);
++G_GNUC_INTERNAL
++gboolean _gtk_menu_dismiss_for_press (GdkEvent *event);
 +
  G_END_DECLS
  

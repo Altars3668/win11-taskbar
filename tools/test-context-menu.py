@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """End-to-end check of the Windows context-menu model in GTK3 and GTK4.
 
 Runs the probes in tools/ctxprobe/ inside the headless test shell
@@ -19,6 +19,12 @@ Cases, with what the Windows model requires:
            the menu appears and stays open
   dismiss  right click, then a left click well away from the menu: the
            menu closes and chooses nothing (it holds the popup grab)
+  reopen   right click, then a right click somewhere else: the menu closes
+           and a new one opens there, in that one click
+  passthrough  right click, then a left click somewhere else: the menu
+           closes and the click still reaches what is under it
+  dropdown click a menu button, then click it again: its menu opens once
+           and closes (the press that closes it is not passed through)
   menubar  left-press File, drag onto the first item, release: chosen
            (press-drag-release with the primary button is kept)
 """
@@ -87,12 +93,15 @@ class Probe:
                 raise RuntimeError(f'{self.title} never became ready')
             time.sleep(0.05)
         self.library = next(l for l in self.lines if l.startswith('READY')).split()[1]
-        gx, gy, gw, gh = map(int, next(
-            l for l in self.lines if l.startswith('GEOM file')).split()[2:])
+        geom = {l.split()[1]: tuple(map(int, l.split()[2:]))
+                for l in self.lines if l.startswith('GEOM ')}
+        gx, gy, gw, gh = geom['file']
         windows = json.loads(shell.trigger('windows'))   # also hides the Overview
         window = next(w for w in windows if w['title'] == self.title)
         bx, by = window['buffer'][:2]
         self.file = (bx + gx + gw // 2, by + gy + gh // 2, gh)
+        dx, dy, dw, dh = geom['drop']
+        self.drop = (bx + dx + dw // 2, by + dy + dh // 2)
         # Let the Overview finish hiding; until then it takes the pointer.
         time.sleep(1.0)
 
@@ -190,6 +199,41 @@ def run_case(shell, toolkit, libdir, case):
             lines = probe.since(m)
             return {'shown': 'SHOWN' in lines, 'closed': 'CLOSED' in lines,
                     'chose': any(l.startswith('ACTIVATED') for l in lines)}
+        if case in ('reopen', 'passthrough'):
+            other = (PRESS_AT[0] + 500, PRESS_AT[1] + 250)
+            button = 3 if case == 'reopen' else 1
+            shell.pointer([{'move': list(PRESS_AT)}, {'wait': 150}, {'press': 3},
+                           {'wait': 60}, {'release': 3}, {'wait': 400}])
+            first = probe.since(m)
+            m = probe.mark()
+            shell.pointer([{'move': list(other)}, {'wait': 150}, {'press': button},
+                           {'wait': 60}, {'release': button}, {'wait': 600}])
+            second = probe.since(m)
+            menus = [w['buffer'] for w in json.loads(shell.trigger('windows'))
+                     if w['type'] in (6, 9, 10)]
+            # A menu opened at the second spot covers it, give or take shadow.
+            there = any(x - 40 <= other[0] <= x + w + 40 and y - 40 <= other[1] <= y + h + 40
+                        for x, y, w, h in menus)
+            got = {'first shown': 'SHOWN' in first,
+                   'click reached the canvas': f'PRESS {button}' in second,
+                   'chose': any(l.startswith('ACTIVATED') for l in second)}
+            if case == 'reopen':
+                got['new menu at the second spot'] = 'SHOWN' in second and there
+            else:
+                got['menu closed'] = 'CLOSED' in second and not menus
+            return got
+        if case == 'dropdown':
+            at = list(probe.drop)
+            click = [{'move': at}, {'wait': 150}, {'press': 1}, {'wait': 60},
+                     {'release': 1}, {'wait': 500}]
+            shell.pointer(click)
+            first = probe.since(m)
+            m = probe.mark()
+            shell.pointer(click)
+            second = probe.since(m)
+            return {'opened': 'DROP SHOWN' in first,
+                    'second click closed it': 'DROP CLOSED' in second,
+                    'reopened': 'DROP SHOWN' in second}
         if case == 'menubar':
             fx, fy, fh = probe.file
             shell.pointer([{'move': [fx, fy]}, {'wait': 150}, {'press': 1}, {'wait': 400},
@@ -216,8 +260,33 @@ WANT = {
     'hold': {'shown while held': False, 'shown after release': True,
              'menu stayed open': True, 'release chose': False},
     'dismiss': {'shown': True, 'closed': True, 'chose': False},
+    'reopen': {'first shown': True, 'click reached the canvas': True, 'chose': False,
+               'new menu at the second spot': True},
+    'passthrough': {'first shown': True, 'click reached the canvas': True, 'chose': False,
+                    'menu closed': True},
+    'dropdown': {'opened': True, 'second click closed it': True, 'reopened': False},
     'menubar': {'reached item': True, 'release chose': True},
 }
+
+
+def run_taskbar(shell):
+    """The shell side: right-click one task button, then another. Windows
+    closes the first jump list and opens the second in that one click.
+    Needs two task buttons (tools/testbed.sh apps)."""
+    buttons = json.loads(shell.trigger('task-buttons'))
+    if len(buttons) < 2:
+        raise SystemExit('need two task buttons: run tools/testbed.sh apps first')
+    centres = [[x + w // 2, y + h // 2] for _id, x, y, w, h in buttons[:2]]
+    shell.trigger('windows')
+    shell.pointer([{'move': [960, 500]}, {'wait': 300}])
+    click = lambda at: [{'move': at}, {'wait': 200}, {'press': 3}, {'wait': 70},
+                        {'release': 3}, {'wait': 700}]
+    shell.pointer(click(centres[0]))
+    first = json.loads(shell.trigger('jump-list-state'))
+    shell.pointer(click(centres[1]))
+    second = json.loads(shell.trigger('jump-list-state'))
+    shell.trigger('jump-list-close')
+    return {'first opened': first == buttons[0][0], 'second opened in one click': second == buttons[1][0]}
 
 
 def main():
@@ -225,13 +294,25 @@ def main():
     ap.add_argument('--gtk3-lib')
     ap.add_argument('--gtk4-lib')
     ap.add_argument('--toolkits', default='3,4')
-    ap.add_argument('--cases', default='drag,quick,hold,dismiss,menubar')
+    ap.add_argument('--cases', default='drag,quick,hold,dismiss,reopen,passthrough,dropdown,menubar')
+    ap.add_argument('--taskbar', action='store_true',
+                    help='check the shell side on the taskbar instead')
     ap.add_argument('--expect-original', action='store_true',
                     help='report only; do not fail on the X11 model')
     args = ap.parse_args()
 
     shell = Shell()
+    # A shell that has just started is still hiding its Overview, and the
+    # virtual pointer has not moved yet.
+    shell.trigger('windows')
+    shell.pointer([{'move': [960, 540]}, {'wait': 300}])
+    time.sleep(2)
     failures = 0
+    if args.taskbar:
+        got = run_taskbar(shell)
+        ok = all(got.values())
+        print(f'taskbar  {"ok" if ok else "FAIL":7} {got}')
+        return 0 if ok else 1
     for toolkit in map(int, args.toolkits.split(',')):
         libdir = args.gtk3_lib if toolkit == 3 else args.gtk4_lib
         for case in args.cases.split(','):
