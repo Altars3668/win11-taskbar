@@ -74,6 +74,8 @@ do_start() {
 #!/bin/bash
 printf '%s' "\$DBUS_SESSION_BUS_ADDRESS" > "$RUN/bus"
 gsettings set org.gnome.shell disable-user-extensions false
+# 清除上一轮禁用测试留下的记录；只修改隔离测试配置。
+gsettings set org.gnome.shell disabled-extensions "[]"
 gsettings set org.gnome.shell enabled-extensions "['$UUID']"
 gsettings --schemadir "$ROOT/schemas" set \
     org.gnome.shell.extensions.win11-taskbar debug-service true

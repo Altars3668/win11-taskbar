@@ -65,11 +65,13 @@ take the volume slider with it. It is put back untouched on disable.
 
 **Start menu.** A floating panel above the Start button with a search box,
 the pinned grid, recent documents under "Recommended", and a footer with
-the real account avatar, shortcuts to Files and Settings, and a power menu
+the real account avatar, shortcuts to Files, Settings and Resources (Task Manager), and a power menu
 — the row Windows calls Start folders. "All apps" lists GNOME's app folders
 as expandable groups first, the way the classic Start menu grouped
 programs, then every app under a letter heading. The Super key opens it
 instead of the Overview. Right-clicking a tile pins or unpins it.
+The account avatar opens account information, lock, sign-out and the system's
+available user-switching actions. Escape and a click outside dismiss Start.
 
 Measured like everything else: 832 x 864, 13px above the taskbar, an
 8-column pinned grid at a 96 x 84 pitch with 32px icons. Note that is the
@@ -82,8 +84,10 @@ the only way to open it from a script.
 saying because Windows 10 did not: quick settings opens from the
 network/volume/battery glyphs, the notification centre from the clock.
 
-*Quick settings* is GNOME's own panel, restyled and re-placed: measured at
-361 x 408, anchored to the bottom-right corner rather than centred under
+*Quick settings* is GNOME's own panel, restyled and re-placed: the latest
+main-page capture is approximately 360 x 386, with three columns of 96 x 48
+cards and their labels below. Extra Linux controls can make it taller.
+It is anchored to the bottom-right corner rather than centred under
 its button, no pointer arrow, acrylic, Windows' accent on active tiles and
 their chevrons, and a track-and-knob slider instead of GNOME's hairline.
 Its contents stay GNOME's deliberately — the Wi-Fi list, Bluetooth, volume
@@ -112,6 +116,12 @@ briefly drawn by hand to match Windows' own shapes, and that was a mistake:
 Adwaita's strokes are drawn for a 16px grid, so anything larger thickens
 them, and hand-drawn shapes next to stock ones never quite match. App icons
 stay at the measured 24px, tray glyphs at 16px.
+Acrylic is a shadow-free, clipped material leaf; the parent renders the
+gradient shadow separately. Blurring the shadow's expanded paint volume
+would turn its halo into a solid translucent rectangle.
+Task icons use short, interruptible feedback. Minimize/restore geometry
+and new-window animation origins use the actual clicked icon rather than
+the top-left fallback or the centre of the window.
 
 **Keyboard.** Super+X opens the Quick Link menu — Windows' Win+X, the
 flat list of administrative destinations, also reached by right-clicking
@@ -153,8 +163,8 @@ Being straight about the gaps:
 * **The flyouts' contents are GNOME's.** Their frames, sizes, margins,
   elevation and accent are measured from Windows; the controls inside are
   GNOME's, because they are NetworkManager, UPower and the mixer. The
-  tile grid also keeps GNOME's two columns: at 361px, three leave no room
-  for a label.
+  three-column layout keeps those original controls, puts labels below
+  their cards, and restores the original layout when disabled.
 * **No drag-to-reorder.** Windows lets you drag task buttons around.
   Pinned order follows GNOME's favourites, which you can reorder from the
   app grid; quick settings tiles are added and removed from the panel's
@@ -312,8 +322,12 @@ context-menu tests use, because GTK's menus react to events, not to API
 calls:
 
 ```bash
-tools/test-context-menu.py      # GTK 3 and GTK 4, five cases each
+tools/test-context-menu.py      # GTK 3 and GTK 4, eight cases each
 tools/test-edge-context-menu.py # Edge, with a throwaway profile
+/usr/bin/python3 tools/test-menu-input.py # Start, calendar, account, cards, Resources, motion
+/usr/bin/python3 tools/test-task-input.py # actual left clicks and preview dismissal
+/usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
+node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
 
 ## Layout of the source

@@ -72,6 +72,28 @@
  * Only ever put this on the outermost element of a surface. Two nested
  * translucent layers multiply — 0.85 over 0.85 is 0.98 — which is exactly
  * how a panel meant to be see-through ends up looking solid. */
+/* 模糊只属于材质层；阴影宿主没有模糊，以保留真实渐变的边缘。 */
+.w11-surface-material {
+    background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
+    background-repeat: repeat;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.dark .w11-surface-material {
+    background: rgba(44, 44, 44, 0.90) url("assets/acrylic-noise.png");
+    background-repeat: repeat;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.w11-shadow-host,
+.w11-flyout-shadow {
+    background: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+
 .w11-acrylic {
     background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
     background-repeat: repeat;
@@ -119,6 +141,7 @@
     border: none;
     background: none;
     box-shadow: none;
+    transition-duration: 0ms;
 }
 
 /* The plate is what lights up, inset inside the cell with the Fluent
@@ -127,6 +150,7 @@
     margin: 2px;
     border-radius: 4px;
     background-color: transparent;
+    transition-duration: 0ms;
 }
 
 /* Fluent SubtleFillColorSecondary / Tertiary. Our screen grabs could not
@@ -235,20 +259,18 @@
 }
 
 .w11-preview-box {
-    background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: none;
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 8px;
     spacing: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    box-shadow: none;
     color: #1a1a1a;
 }
 
 .w11-preview.dark .w11-preview-box {
-    background: rgba(44, 44, 44, 0.90) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: none;
+    border: 1px solid transparent;
     color: #ffffff;
 }
 
@@ -439,7 +461,7 @@
     background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
     background-repeat: repeat;
     border: 1px solid rgba(0, 0, 0, 0.10);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
     color: #1a1a1a;
     font-size: 12px;
 }
@@ -453,7 +475,6 @@
 
 /* The grid inside is a child of the content box: giving it a background
    too would stack a second translucent layer and make the panel solid. */
-.w11-flyout .quick-settings,
 .w11-flyout .datemenu-popover {
     background: none;
     background-color: transparent;
@@ -572,6 +593,130 @@
     icon-size: 16px;
 }
 
+/* Windows 主页面实测：三列 96×48 卡片，文字在卡片下方，12px 列间距。 */
+.w11-flyout .popup-menu-boxpointer {
+    -arrow-base: 0px;
+    -arrow-rise: 0px;
+    -arrow-border-width: 0px;
+    -arrow-background-color: transparent;
+    -arrow-border-color: transparent;
+    -arrow-box-shadow: none;
+}
+.w11-flyout .popup-menu-content.quick-settings,
+.w11-flyout.dark .popup-menu-content.quick-settings {
+    padding: 23px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.w11-flyout .quick-settings-grid {
+    spacing-columns: 12px;
+    spacing-rows: 12px;
+}
+
+.w11-flyout .w11-quick-tile,
+.w11-flyout .w11-quick-tile:hover,
+.w11-flyout .w11-quick-tile:checked,
+.w11-flyout .w11-quick-tile:active,
+.w11-flyout .w11-quick-tile .w11-quick-control,
+.w11-flyout .w11-quick-tile .w11-quick-control:hover,
+.w11-flyout .w11-quick-tile .w11-quick-control:checked,
+.w11-flyout .w11-quick-tile .quick-toggle-menu-button,
+.w11-flyout .w11-quick-tile .quick-toggle-menu-button:checked {
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    color: #1a1a1a;
+    transition-duration: 0ms;
+}
+
+.w11-flyout .w11-quick-tile {
+    min-height: 84px;
+}
+
+.w11-flyout .w11-quick-tile > StBoxLayout {
+    spacing: 6px;
+}
+
+.w11-flyout.dark .w11-quick-tile,
+.w11-flyout.dark .w11-quick-tile:checked {
+    color: #ffffff;
+}
+
+.w11-flyout .w11-quick-card {
+    height: 46px;
+    min-width: 94px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(0, 0, 0, 0.0588);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.161);
+    color: #1a1a1a;
+}
+
+.w11-flyout .w11-quick-tile:hover .w11-quick-card {
+    background-color: rgba(255, 255, 255, 0.90);
+}
+
+.w11-flyout.dark .w11-quick-card {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+.w11-flyout .w11-quick-tile:checked .w11-quick-card,
+.w11-flyout.dark .w11-quick-tile:checked .w11-quick-card {
+    background-color: #0067c0;
+    color: #ffffff;
+}
+
+.w11-flyout .w11-quick-tile .w11-quick-control,
+.w11-flyout .w11-quick-tile .w11-quick-control:checked,
+.w11-flyout .w11-quick-tile .quick-toggle-menu-button,
+.w11-flyout .w11-quick-tile .quick-toggle-menu-button:checked {
+    color: inherit;
+}
+
+.w11-flyout .w11-quick-tile .w11-quick-control {
+    min-height: 0;
+    min-width: 0;
+    height: 46px;
+}
+
+.w11-flyout .w11-quick-split .quick-toggle-menu-button {
+    width: 46px;
+    min-width: 0;
+    min-height: 0;
+    height: 46px;
+    padding: 0;
+}
+
+.w11-flyout .w11-quick-card .quick-toggle-icon {
+    icon-size: 16px;
+}
+
+.w11-flyout .w11-quick-tile .quick-toggle-title {
+    font-size: 11px;
+    font-weight: normal;
+}
+
+.w11-flyout .icon-button.flat,
+.w11-flyout .w11-qs-edit-button,
+.w11-flyout .quick-settings-system-item,
+.w11-flyout .quick-settings-system-item .icon-button,
+.w11-flyout .quick-settings-system-item .icon-button:checked {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+.w11-flyout .quick-settings-system-item .icon-button:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
 /* Sliders: Windows draws a thick track with a round knob, not GNOME's
    hairline. */
 .w11-flyout .quick-slider {
@@ -661,21 +806,19 @@
 }
 
 .w11-start-panel {
-    background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: none;
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 24px;
     spacing: 16px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+    box-shadow: none;
     color: #1a1a1a;
     font-size: 12px;
 }
 
 .w11-start-menu.dark .w11-start-panel {
-    background: rgba(40, 40, 40, 0.90) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: none;
+    border: 1px solid transparent;
     color: #ffffff;
 }
 
@@ -1048,21 +1191,19 @@
 }
 
 .w11-notification-panel {
-    background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: none;
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 12px;
     spacing: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+    box-shadow: none;
     color: #1a1a1a;
     font-size: 12px;
 }
 
 .w11-notification-centre.dark .w11-notification-panel {
-    background: rgba(44, 44, 44, 0.90) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: none;
+    border: 1px solid transparent;
     color: #ffffff;
 }
 
@@ -1121,7 +1262,7 @@
     border-radius: 8px;
     padding: 8px;
     spacing: 4px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
     color: #1a1a1a;
     font-size: 12px;
 }

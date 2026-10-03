@@ -19,6 +19,8 @@ CONFLICTS=(
     dash-to-panel@jderose9.github.com
     ubuntu-dock@ubuntu.com
     dash-to-dock@micxgx.gmail.com
+    arcmenu@arcmenu.com
+    clipboard-history@alexsaveau.dev
     appindicatorsupport@rgcjonas.gmail.com
     ubuntu-appindicators@ubuntu.com
 )

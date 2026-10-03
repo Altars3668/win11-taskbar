@@ -218,6 +218,14 @@
       list instead, which disagrees as soon as something unpinned is
       running; its binding is restored when this is off.</description>
     </key>
+    <key name="yielded-bindings" type="a{sas}">
+      <default>{}</default>
+      <summary>GNOME key bindings set aside for the Windows shortcuts</summary>
+      <description>Internal. Maps "schema key" to the value it had before
+      a Windows shortcut took one of its accelerators, so that it can be
+      given back on disable — including after a session that ended
+      without one.</description>
+    </key>
 
     <key name="context-menu-on-release" type="b">
       <default>true</default>

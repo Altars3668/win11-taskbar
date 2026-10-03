@@ -17,6 +17,7 @@ import {Taskbar} from './lib/panel.js';
 import {ShellMenus} from './lib/shellMenus.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
+import {WindowMotion} from './lib/windowMotion.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
 import {setGettext as setEditorGettext} from './lib/quickSettingsEditor.js';
 import {setGettext as setLinksGettext} from './lib/quickLinks.js';
@@ -54,6 +55,7 @@ export default class Win11TaskbarExtension extends Extension {
         // Before the taskbars: their menu managers bind the shell's handler
         // when they are made, and should get the one lib/shellMenus.js wraps.
         this._syncShellMenus();
+        this._windowMotion = new WindowMotion();
         this._rebuild();
         this._syncTopPanel();
 
@@ -82,6 +84,8 @@ export default class Win11TaskbarExtension extends Extension {
         this._shellMenus = null;
 
         this._destroyTaskbars();
+        this._windowMotion?.destroy();
+        this._windowMotion = null;
 
         this._statusHost?.destroy();
         this._statusHost = null;
