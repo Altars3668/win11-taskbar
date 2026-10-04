@@ -15,6 +15,17 @@
     <value value="2" nick="dark"/>
   </enum>
 
+  <enum id="org.gnome.shell.extensions.win11-taskbar.start-layout">
+    <value value="0" nick="compact"/>
+    <value value="1" nick="wide"/>
+  </enum>
+
+  <enum id="org.gnome.shell.extensions.win11-taskbar.tray-hover">
+    <value value="0" nick="tooltip"/>
+    <value value="1" nick="menu"/>
+    <value value="2" nick="none"/>
+  </enum>
+
   <schema id="org.gnome.shell.extensions.win11-taskbar"
           path="/org/gnome/shell/extensions/win11-taskbar/">
 
@@ -261,6 +272,21 @@
       <description>The taskbar already shows the same apps.</description>
     </key>
 
+    <key name="start-layout" enum="org.gnome.shell.extensions.win11-taskbar.start-layout">
+      <default>'compact'</default>
+      <summary>Start menu layout</summary>
+      <description>Compact six-column layout, or the larger eight-column Insider layout.</description>
+    </key>
+    <key name="start-folders" type="as">
+      <default>['files', 'settings']</default>
+      <summary>Shortcuts beside Start's power button</summary>
+      <description>Selected folder and application ids, configured in preferences.</description>
+    </key>
+    <key name="tray-hover" enum="org.gnome.shell.extensions.win11-taskbar.tray-hover">
+      <default>'menu'</default>
+      <summary>What hovering a tray icon shows</summary>
+      <description>A program menu when available, a Windows-style tooltip, or nothing.</description>
+    </key>
     <key name="start-menu" type="b">
       <default>true</default>
       <summary>Use the built-in Start menu</summary>

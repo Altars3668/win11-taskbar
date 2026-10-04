@@ -110,7 +110,8 @@ export default class Win11TaskbarExtension extends Extension {
 
             for (const index of indices) {
                 this._taskbars.push(
-                    new Taskbar(index, this._settings, this._statusHost));
+                    new Taskbar(index, this._settings, this._statusHost,
+                        () => this.openPreferences(), _));
             }
 
             return GLib.SOURCE_REMOVE;

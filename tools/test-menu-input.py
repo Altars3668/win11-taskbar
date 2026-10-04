@@ -2,13 +2,31 @@
 """菜单真实输入回归；只操作 testbed.sh 的隔离桌面，不执行注销等系统动作。"""
 import importlib.util
 import json
+import os
+import subprocess
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('ctx', HERE / 'test-context-menu.py')
 ctx = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ctx)
+
+
+@contextmanager
+def selected_resources(shell):
+    env = dict(os.environ, XDG_CONFIG_HOME=str(Path(ctx.RUN, 'config')),
+               DBUS_SESSION_BUS_ADDRESS=shell.address)
+    cmd = ['gsettings', '--schemadir', str(HERE.parent / 'schemas')]
+    schema = 'org.gnome.shell.extensions.win11-taskbar'
+    saved = subprocess.check_output(cmd + ['get', schema, 'start-folders'], env=env, text=True).strip()
+    try:
+        subprocess.run(cmd + ['set', schema, 'start-folders', "['files', 'settings', 'resources']"], env=env, check=True)
+        time.sleep(0.25)
+        yield
+    finally:
+        subprocess.run(cmd + ['set', schema, 'start-folders', saved], env=env, check=True)
 
 
 def main():
@@ -66,6 +84,11 @@ def main():
     check('用户头像弹出账户菜单', lambda: dump()['bars'][0]['startMenu']['accountMenuOpen'])
     check('账户菜单包含用户信息入口',
           lambda: 'Account information' in dump()['bars'][0]['startMenu']['accountMenuItems'])
+    def account_anchored():
+        start = dump()['bars'][0]['startMenu']
+        menu, avatar = start['accountMenu'], start['avatar']
+        return abs(menu['x'] - avatar['x']) < 4 and menu['y'] + menu['h'] <= avatar['y']
+    check('账户菜单锚定头像向上出现，不从侧边滑出', account_anchored)
     shell.trigger('start-menu-close')
     time.sleep(0.3)
 
@@ -84,6 +107,13 @@ def main():
     check('快捷面板有非透明材质底色',
           lambda: dump()['bars'][0]['quickSettings'] is not None and
           100 < dump()['bars'][0]['quickSettings']['backgroundAlpha'] < 255)
+    def quick_anchored():
+        bar = dump()['bars'][0]
+        content = bar['quickSettings']['content']
+        return (348 <= content['w'] <= 362 and
+                abs(content['x'] + content['w'] - (1920 - 12)) <= 2 and
+                abs(content['y'] + content['h'] - (bar['panel']['y'] - 6)) <= 2)
+    check('快捷面板离屏幕右侧 12px、离任务栏 6px', quick_anchored)
     q = dump()['bars'][0]['quickSettings']
     assert q['columns'] == 3
     cards = [tile for tile in q['tiles'] if tile['visible']]
@@ -96,14 +126,15 @@ def main():
     print('ok 三列矩形卡片，文字在卡片下方：' + str([(t['title'], t['card']['w'], t['card']['h']) for t in cards]), flush=True)
     shell.trigger('quick-settings-close')
 
-    shell.trigger('start-menu')
-    time.sleep(0.35)
-    folders = dump()['bars'][0]['startMenu']['folderButtons']
-    resource = next(button for button in folders if button['name'] == 'Task Manager')
-    click(resource)
-    check('开始菜单任务管理器实际启动 Resources',
-          lambda: any(w['wmClass'] and 'resources' in w['wmClass'].lower() and w['frame'][2] > 0
-                      for w in json.loads(shell.trigger('windows'))))
+    with selected_resources(shell):
+        shell.trigger('start-menu')
+        time.sleep(0.35)
+        folders = dump()['bars'][0]['startMenu']['folderButtons']
+        resource = next(button for button in folders if button['name'] == 'Task Manager')
+        click(resource)
+        check('选择开始菜单任务管理器后可实际启动 Resources',
+              lambda: any(w['wmClass'] and 'resources' in w['wmClass'].lower() and w['frame'][2] > 0
+                          for w in json.loads(shell.trigger('windows'))))
     resource_window = next(w for w in json.loads(shell.trigger('windows'))
                            if w['wmClass'] and 'resources' in w['wmClass'].lower())
     assert resource_window['launchOrigin'] and resource_window['launchAnimationApplied'], resource_window

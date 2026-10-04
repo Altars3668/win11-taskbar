@@ -169,9 +169,8 @@ def main():
         else:
             c.failures.append(f"{tag}: the overflow panel should start closed")
 
-        # The Start menu's proportions are NOT measured (see spec.js), so we
-        # only assert that what renders matches what spec.js asks for, and
-        # that it starts closed.
+        # 开始菜单尺寸有紧凑/Insider 两种选择，单独的真实输入测试检查切换和屏幕约束。
+        # 初始状态必须关闭。
         start = bar.get("startMenu")
         if start is not None:
             if not start["open"]:

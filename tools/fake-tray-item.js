@@ -15,6 +15,10 @@ import GLib from 'gi://GLib';
 
 const id = ARGV[0] ?? 'win11-taskbar-test';
 const iconName = ARGV[1] ?? 'dialog-information-symbolic';
+const notifyOnAbout = ARGV.includes('--notify-about');
+let aboutCount = 0;
+let layoutCount = 0;
+let revision = 1;
 
 const ITEM_XML = `
 <node>
@@ -36,6 +40,8 @@ const ITEM_XML = `
     <property name="ToolTip" type="(sa(iiay)ss)" access="read"/>
     <property name="Menu" type="o" access="read"/>
     <property name="ItemIsMenu" type="b" access="read"/>
+    <property name="TestAboutCount" type="u" access="read"/>
+    <property name="TestLayoutCount" type="u" access="read"/>
     <signal name="NewIcon"/>
     <signal name="NewStatus"><arg type="s"/></signal>
   </interface>
@@ -74,6 +80,8 @@ const item = {
     ToolTip: ['', [], `Test item (${id})`, 'Published by tools/fake-tray-item.js'],
     Menu: '/MenuBar',
     ItemIsMenu: false,
+    get TestAboutCount() { return aboutCount; },
+    get TestLayoutCount() { return layoutCount; },
     Activate(x, y) {
         print(`Activate ${x},${y}`);
     },
@@ -97,6 +105,7 @@ function menuItem(itemId, label, extra = {}) {
 
 const menu = {
     GetLayout(_parentId, _depth, _props) {
+        layoutCount++;
         const children = [
             menuItem(1, 'First entry'),
             new GLib.Variant('(ia{sv}av)',
@@ -104,24 +113,28 @@ const menu = {
             menuItem(3, 'Second entry'),
             menuItem(4, 'Disabled entry',
                 {enabled: new GLib.Variant('b', false)}),
-        ].map(v => new GLib.Variant('v', v));
+        ];
 
-        return [1, new GLib.Variant('(ia{sv}av)',
-            [0, {'children-display': new GLib.Variant('s', 'submenu')},
-             children])];
+        // wrapJSObject 会根据返回签名封装 tuple；这里再包 Variant 会变成错误类型。
+        return [revision, [0, {'children-display': new GLib.Variant('s', 'submenu')}, children]];
     },
     Event(eventItemId, eventId, _data, _timestamp) {
         print(`menu event: item ${eventItemId} ${eventId}`);
     },
     AboutToShow(_itemId) {
-        return false;
+        aboutCount++;
+        if (notifyOnAbout) {
+            revision++;
+            menuImpl.emit_signal('LayoutUpdated', new GLib.Variant('(ui)', [revision, 0]));
+        }
+        return notifyOnAbout;
     },
 };
 
 const itemImpl = Gio.DBusExportedObject.wrapJSObject(ITEM_XML, item);
 const menuImpl = Gio.DBusExportedObject.wrapJSObject(MENU_XML, menu);
 
-const busName = `org.kde.StatusNotifierItem-${new Date().getTime() % 100000}-1`;
+const busName = `org.kde.StatusNotifierItem-${GLib.uuid_string_random().replace(/-/g, '')}-1`;
 
 Gio.bus_own_name(Gio.BusType.SESSION, busName, Gio.BusNameOwnerFlags.NONE,
     connection => {

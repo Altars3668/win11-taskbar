@@ -37,6 +37,21 @@
     color: #ffffff;
 }
 
+.w11-taskbar.w11-taskbar-scene,
+.w11-taskbar.w11-taskbar-scene.dark {
+    background: none;
+}
+
+.w11-taskbar-material {
+    background: rgba(243, 243, 243, 0.70) url("assets/acrylic-noise.png");
+    background-repeat: repeat;
+}
+
+.dark .w11-taskbar-material {
+    background: rgba(32, 32, 32, 0.72) url("assets/acrylic-noise.png");
+    background-repeat: repeat;
+}
+
 /* Measured: a single 1px separator line along the inner edge, drawn over
    the 48px band so the buttons keep their full measured height. */
 .w11-separator {
@@ -58,10 +73,7 @@
  *
  * Windows builds it from a blurred backdrop, a luminosity blend, a tint
  * and a noise tile. The blur comes from Shell.BlurEffect, attached in JS.
- * The tint and the noise are both here, and they have to be written as
- * the `background` shorthand: St only parses `repeat` from the shorthand,
- * so setting background-color and background-image separately gives a
- * single stretched copy of the tile instead of a texture.
+ * 色调和噪点在材质叶节点上叠加，圆角裁剪由独立着色器处理。
  *
  * The noise carries its own low alpha inside the PNG, because St cannot
  * set an opacity on one background layer. And `repeat` has to be its own
@@ -74,15 +86,15 @@
  * how a panel meant to be see-through ends up looking solid. */
 /* 模糊只属于材质层；阴影宿主没有模糊，以保留真实渐变的边缘。 */
 .w11-surface-material {
-    background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
+    background: rgba(252, 252, 252, 0.82) url("assets/acrylic-noise.png");
     background-repeat: repeat;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 8px;
     box-shadow: none;
 }
 
 .dark .w11-surface-material {
-    background: rgba(44, 44, 44, 0.90) url("assets/acrylic-noise.png");
+    background: rgba(44, 44, 44, 0.85) url("assets/acrylic-noise.png");
     background-repeat: repeat;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -91,7 +103,19 @@
 .w11-flyout-shadow {
     background: none;
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* St 只支持一个 CSS 阴影；贴边与扩散阴影必须用独立演员，不能写逗号列表。 */
+.w11-contact-shadow {
+    background: none;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+.w11-tray-menu .w11-flyout-shadow,
+.w11-start-power-menu .w11-flyout-shadow {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
 }
 
 .w11-acrylic {
@@ -383,6 +407,27 @@
 
 /* --------------------------------------------------- notification area */
 
+.w11-tray-tooltip {
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background-color: rgba(249, 249, 249, 0.96);
+    color: #1a1a1a;
+    font-size: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.13);
+}
+
+.w11-tray-tooltip.dark {
+    background-color: rgba(44, 44, 44, 0.96);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.w11-taskbar-menu { min-width: 128px; }
+.w11-taskbar-menu .popup-menu-item { min-height: 20px; padding: 4px 10px; }
+.w11-taskbar-menu .w11-taskbar-settings-item { margin-top: 7px; }
+
+
 .w11-tray-icon {
     padding: 0;
     margin: 0;
@@ -452,6 +497,14 @@
     margin: 0;
     spacing: 0;
 }
+
+/* 控制区内的 24px 图标单元之间也留出实测的 4px；共享一个悬停区域。 */
+.w11-system-indicator .panel-button > .panel-status-indicators-box { spacing: 4px; }
+.w11-system-indicator .panel-button { border-radius: 4px; transition-duration: 0ms; }
+.w11-system-indicator .panel-button:hover,
+.w11-system-indicator .panel-button:active { background-color: rgba(0, 0, 0, 0.06); }
+.dark .w11-system-indicator .panel-button:hover,
+.dark .w11-system-indicator .panel-button:active { background-color: rgba(255, 255, 255, 0.08); }
 
 /* ------------------------------------------------------- system flyouts */
 
@@ -843,6 +896,9 @@
     padding: 6px 11px;
 }
 
+.w11-start-search .hint-text { color: rgba(0, 0, 0, 0.55); }
+.w11-start-menu.dark .w11-start-search .hint-text { color: rgba(255, 255, 255, 0.60); }
+
 .w11-start-search-icon {
     icon-size: 16px;
     padding-right: 8px;
@@ -1078,6 +1134,9 @@
     box-shadow: none;
 }
 
+.w11-notification-centre .calendar { padding: 0; margin: 0; }
+.w11-notification-centre .calendar-day-heading { text-align: center; }
+
 .w11-notification-centre .calendar-day {
     border-radius: 14px;
     color: inherit;
@@ -1241,6 +1300,45 @@
     border: 1px dashed rgba(255, 255, 255, 0.3);
 }
 
+/* 材质只绘制一次，下面的借用原生内容层不再叠加底色或第二圈阴影。 */
+.popup-menu-content.w11-surface-content,
+.w11-jumplist.dark .popup-menu-content.w11-surface-content,
+.w11-tray-menu.dark .popup-menu-content.w11-surface-content,
+.w11-start-power-menu.dark .popup-menu-content.w11-surface-content,
+.w11-flyout.dark .popup-menu-content.w11-surface-content {
+    background: none;
+    border: 1px solid transparent;
+    box-shadow: none;
+}
+
+.w11-tray-overflow-grid,
+.w11-tray-overflow.dark .w11-tray-overflow-grid {
+    background: none;
+    border: 1px solid transparent;
+    box-shadow: none;
+}
+
+/* 子页替换主网格；滚动列表受固定页面高度约束，不再把弹层撑成伸缩菜单。 */
+.w11-quick-page { height: 334px; spacing: 12px; }
+.w11-quick-page-header { spacing: 10px; min-height: 32px; }
+.w11-quick-page-title { font-size: 14px; font-weight: 600; }
+.w11-quick-back { padding: 8px; border-radius: 4px; background: none; color: inherit; }
+.w11-quick-back:hover { background-color: rgba(0,0,0,0.06); }
+.dark .w11-quick-back:hover { background-color: rgba(255,255,255,0.08); }
+.w11-quick-page .quick-toggle-menu { background: none; border: none; box-shadow: none; padding: 0; }
+.w11-quick-footer { spacing: 4px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
+.w11-quick-footer .quick-settings-system-item { background: none; padding: 0; margin: 0; border: none; }
+.w11-quick-footer-action, .w11-quick-footer .w11-qs-edit-button { padding: 8px; border-radius: 4px; background: none; color: inherit; }
+.w11-quick-footer-action:hover { background-color: rgba(0,0,0,0.06); }
+.dark .w11-quick-footer-action:hover { background-color: rgba(255,255,255,0.08); }
+.w11-quick-edit-list { spacing: 6px; }
+.w11-quick-edit-description { font-size: 11px; padding-bottom: 8px; }
+.w11-quick-edit-row { padding: 10px 8px; border-radius: 4px; background: none; color: inherit; }
+.w11-quick-edit-row StBoxLayout { spacing: 10px; }
+.w11-quick-edit-row:hover { background-color: rgba(0,0,0,0.06); }
+.dark .w11-quick-edit-row:hover { background-color: rgba(255,255,255,0.08); }
+.w11-quick-edit-done { padding: 8px 16px; margin-top: 8px; border-radius: 4px; background-color: #0067c0; color: #ffffff; }
+
 /* ------------------------------------------------- Quick Link menu (Win+X) */
 
 /* It reuses the jump list's surface; only the density differs — Windows'
@@ -1256,21 +1354,19 @@
 }
 
 .w11-clip-panel {
-    background: rgba(252, 252, 252, 0.85) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: none;
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 8px;
     spacing: 4px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+    box-shadow: none;
     color: #1a1a1a;
     font-size: 12px;
 }
 
 .w11-clipboard.dark .w11-clip-panel {
-    background: rgba(44, 44, 44, 0.90) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: none;
+    border: 1px solid transparent;
     color: #ffffff;
 }
 

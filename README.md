@@ -59,22 +59,29 @@ placed exactly where Windows puts it: centred on the chevron and flush
 against the bar. An item that starts asking for attention is pulled back
 out, as on Windows.
 
+托盘支持“悬停程序菜单／Windows 式提示／不弹出”三种设置，默认按用户要求显示程序菜单；
+未提供 DBusMenu 的程序退回提示，不在悬停时激活程序。设置页按程序名称选择折叠，
+不用手写 ID；异步菜单刷新后仍保留折叠操作。右键任务栏空白处在松开后显示
+“任务管理器”和“任务栏设置”，不会夺走开始按钮、应用按钮或托盘程序自己的菜单。
+右侧组间留白采用实测的 4/8/4px，控制区内的图标单元也留出 4px。
+
 GNOME's own Quick Settings — network, volume, battery — is moved into the
 tray rather than reimplemented, because hiding the top bar would otherwise
 take the volume slider with it. It is put back untouched on disable.
 
 **Start menu.** A floating panel above the Start button with a search box,
 the pinned grid, recent documents under "Recommended", and a footer with
-the real account avatar, shortcuts to Files, Settings and Resources (Task Manager), and a power menu
-— the row Windows calls Start folders. "All apps" lists GNOME's app folders
+the real account avatar, selectable folder/app shortcuts and a power menu
+— the row Windows calls Start folders. Files and Settings are selected by
+default; Resources (Task Manager) is optional here and always remains in Win+X. "All apps" lists GNOME's app folders
 as expandable groups first, the way the classic Start menu grouped
 programs, then every app under a letter heading. The Super key opens it
 instead of the Overview. Right-clicking a tile pins or unpins it.
 The account avatar opens account information, lock, sign-out and the system's
 available user-switching actions. Escape and a click outside dismiss Start.
 
-Measured like everything else: 832 x 864, 13px above the taskbar, an
-8-column pinned grid at a 96 x 84 pitch with 32px icons. Note that is the
+默认使用 640×720 的六列紧凑布局；设置中可选历史实测的 832×864 Insider 八列布局。
+两种布局均限制在显示器可用区域内。Insider 布局距任务栏 13px，固定项间距为 96×84，图标为 32px。 Note that is the
 *new* Start menu — the measurement machine runs Insider build 29671, where
 it is 832 wide with 8 columns rather than the 640 and 6 of the shipping
 build. `docs/windows-spec.md` explains, including why `TogglePattern` is
@@ -117,7 +124,9 @@ Adwaita's strokes are drawn for a 16px grid, so anything larger thickens
 them, and hand-drawn shapes next to stock ones never quite match. App icons
 stay at the measured 24px, tray glyphs at 16px.
 Acrylic is a shadow-free, clipped material leaf; the parent renders the
-gradient shadow separately. Blurring the shadow's expanded paint volume
+gradient shadow separately. 材质仅采样壁纸和实际应用窗口，以 ACTOR 模式离屏模糊，
+不从含自身 UI 的当前 framebuffer 回采。圆角遮罩、较淡的扩散阴影和贴边阴影分别处理；
+隐藏材质释放克隆并停止逐帧监听，不为了消除残影而永久禁用整台桌面的局部重绘。 Blurring the shadow's expanded paint volume
 would turn its halo into a solid translucent rectangle.
 Task icons use short, interruptible feedback. Minimize/restore geometry
 and new-window animation origins use the actual clicked icon rather than
@@ -156,10 +165,9 @@ option to stop reserving space so windows run under the bar.
 
 Being straight about the gaps:
 
-* **The Start menu matches an Insider build.** The machine measured runs
-  build 29671, whose Start menu is the new 832-wide, 8-column design
-  rather than the shipping 640/6. If you want the familiar proportions,
-  change `START_MENU` in `lib/spec.js` — the layout reads from it.
+* **开始菜单不是每个 Windows 版本的逐像素复制。** 默认紧凑布局采用常见的六列比例；
+  八列选项保留 Insider 29671 的历史实测。最近一次自动化未成功打开 Windows 开始菜单，
+  不把未打开的截图当作新测量。Linux 材质也不宣称与 Windows 的 HDR/亮度混合逐像素等价。
 * **The flyouts' contents are GNOME's.** Their frames, sizes, margins,
   elevation and accent are measured from Windows; the controls inside are
   GNOME's, because they are NetworkManager, UPower and the mixer. The

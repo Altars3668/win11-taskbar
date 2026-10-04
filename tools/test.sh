@@ -10,6 +10,8 @@ tools/check.sh || rc=1
 echo
 echo "== click semantics (no compositor needed) =="
 node tools/test-semantics.mjs || rc=1
+node tools/test-layout-options.mjs || rc=1
+node tools/test-ui-lifecycle.mjs || rc=1
 
 echo
 echo "== schemas =="

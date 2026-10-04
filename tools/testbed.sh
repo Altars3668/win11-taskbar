@@ -16,7 +16,7 @@
 
 set -u
 UUID=win11-taskbar@altarscn.com
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="${WIN11_TASKBAR_TEST_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/win11-taskbar-testbed"
 DISPLAY_NAME=w11test
 BUS=org.gnome.Shell.Extensions.Win11Taskbar
@@ -28,6 +28,7 @@ session_env() {
     export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
     export XDG_CONFIG_HOME="$RUN/config"
     export XDG_CACHE_HOME="$RUN/config/cache"
+    export XDG_DATA_HOME="$RUN/data"
     export WAYLAND_DISPLAY="$DISPLAY_NAME"
     unset DISPLAY
     [ -s "$RUN/bus" ] && export DBUS_SESSION_BUS_ADDRESS="$(cat "$RUN/bus")"
@@ -39,6 +40,17 @@ session_env() {
 # alone leaves the shell it spawned running, which then keeps the Wayland
 # socket locked and blocks the next run.
 do_stop() {
+    if [ -s "$RUN/app-pids" ]; then
+        while read -r pid; do
+            case "$(readlink "/proc/$pid/exe" 2>/dev/null)" in
+                */gjs|*/gnome-text-editor|*/gnome-calculator)
+                    if grep -azFxq "XDG_CONFIG_HOME=$RUN/config" "/proc/$pid/environ" 2>/dev/null; then
+                        kill -TERM "$pid" 2>/dev/null || true
+                    fi ;;
+            esac
+        done < "$RUN/app-pids"
+        rm -f "$RUN/app-pids"
+    fi
     if [ -s "$RUN/pid" ]; then
         local pgid
         pgid="$(cat "$RUN/pid")"
@@ -61,13 +73,14 @@ do_stop() {
 
 do_start() {
     do_stop
-    # The extension must be installed (or symlinked) where the shell looks.
-    local target="$HOME/.local/share/gnome-shell/extensions/$UUID"
-    if [ ! -e "$target" ]; then
-        mkdir -p "$(dirname "$target")"
-        ln -sfn "$ROOT" "$target"
-        echo "linked $target -> $ROOT"
+    # 测试自己的扩展目录也隔离，既不切换真实安装，也不读取真实最近文档。
+    local target="$RUN/data/gnome-shell/extensions/$UUID"
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+        printf 'test extension path is not a symlink: %s\n' "$target"
+        return 1
     fi
+    mkdir -p "$(dirname "$target")"
+    ln -sfn "$ROOT" "$target"
     glib-compile-schemas "$ROOT/schemas" || return 1
 
     cat > "$RUN/inner.sh" <<INNER
@@ -112,13 +125,18 @@ case "${1:-all}" in
   stop)   do_stop; echo stopped ;;
   apps)
     session_env
-    for app in gnome-text-editor gnome-calculator; do
-        command -v "$app" >/dev/null && setsid "$app" >/dev/null 2>&1 &
-    done
-    # Publish tray items too: no app with a StatusNotifierItem is guaranteed
-    # to be installed, and the tray needs something to show.
-    setsid gjs -m "$ROOT/tools/fake-tray-item.js"         tray-alpha dialog-information-symbolic >/dev/null 2>&1 &
-    setsid gjs -m "$ROOT/tools/fake-tray-item.js"         tray-beta mail-unread-symbolic >/dev/null 2>&1 &
+    # 不恢复真实用户的编辑器标签或草稿，且记录自己启动的独立进程供 stop 回收。
+    mkdir -p "$RUN/app-data"
+    start_app() {
+        setsid "$@" >/dev/null 2>&1 &
+        printf '%s\n' "$!" >> "$RUN/app-pids"
+    }
+    command -v gnome-text-editor >/dev/null && \
+        start_app env XDG_DATA_HOME="$RUN/app-data" gnome-text-editor --standalone
+    command -v gnome-calculator >/dev/null && \
+        start_app env XDG_DATA_HOME="$RUN/app-data" gnome-calculator
+    start_app gjs -m "$ROOT/tools/fake-tray-item.js" tray-alpha dialog-information-symbolic
+    start_app gjs -m "$ROOT/tools/fake-tray-item.js" tray-beta mail-unread-symbolic
     sleep 10
     echo "launched test apps and tray items" ;;
   verify)

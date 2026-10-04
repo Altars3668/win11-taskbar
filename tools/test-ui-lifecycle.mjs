@@ -35,7 +35,7 @@ function load(file, exports, extra = {}) {
         .replace(/^import .*;\n/gm, '').replace(/export (class|function)/g, '$1');
     return vm.runInNewContext(`${source}\n;({${exports.join(',')}})`, {
         Clutter: {Orientation: {VERTICAL: 1}, ActorAlign: {CENTER: 1}, AnimationMode: {EASE_OUT_QUART: 1}},
-        GObject: {registerClass: klass => klass},
+        GObject: {registerClass: (...args) => args.at(-1)},
         St: {Widget: Actor, BoxLayout: Actor, Bin: Actor}, ...extra,
     });
 }

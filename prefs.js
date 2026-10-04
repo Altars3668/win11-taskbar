@@ -2,7 +2,10 @@
 
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
+
+import {START_SHORTCUTS} from './lib/startOptions.js';
 
 import {
     ExtensionPreferences, gettext as _,
@@ -11,6 +14,15 @@ import {
 export default class Win11TaskbarPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
+        this._cleanup = [];
+        this._cancellable = new Gio.Cancellable();
+        window.connect('close-request', () => {
+            this._cancellable.cancel();
+            for (const cleanup of this._cleanup)
+                cleanup();
+            this._cleanup = [];
+            return false;
+        });
 
         window.add(this._layoutPage(settings));
         window.add(this._startPage(settings));
@@ -103,14 +115,20 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('The Super key opens it'),
             _('Matches the Windows key. When off, Super opens the Overview.')));
 
-        const note = new Adw.PreferencesGroup({
-            title: _('A note on fidelity'),
-            description: _('Unlike the taskbar, the Start menu\u2019s ' +
-                'proportions are not measured from Windows: the measurement ' +
-                'machine locked its session before the menu could be read. ' +
-                'They follow the published Windows 11 figures.'),
+        group.add(this._combo(settings, 'start-layout', _('Menu size'), [
+            ['compact', _('Compact \u2014 six columns')],
+            ['wide', _('Wide \u2014 eight columns (Insider)')],
+        ]));
+        const folders = new Adw.PreferencesGroup({
+            title: _('Shortcuts beside the power button'),
+            description: _('Choose which folders and apps appear in Start. Task Manager remains available in the Win+X menu.'),
         });
-        page.add(note);
+        page.add(folders);
+        for (const shortcut of START_SHORTCUTS) {
+            const row = this._arraySwitch(settings, 'start-folders', shortcut.id, _(shortcut.label));
+            row.add_prefix(new Gtk.Image({icon_name: shortcut.icon}));
+            folders.add(row);
+        }
 
         return page;
     }
@@ -137,24 +155,17 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('Network, volume and battery. With the top bar hidden these ' +
                 'have nowhere else to go.')));
 
+        group.add(this._combo(settings, 'tray-hover', _('When hovering an icon'), [
+            ['menu', _('Program menu (tooltip when unavailable)')],
+            ['tooltip', _('Tooltip (Windows default)')],
+            ['none', _('Nothing')],
+        ]));
         const overflow = new Adw.PreferencesGroup({
-            title: _('Overflow'),
-            description: _('Right-click any tray icon to move it between ' +
-                'the taskbar and the overflow. The list below is what that ' +
-                'writes, comma separated; an item asking for attention is ' +
-                'shown regardless.'),
+            title: _('Fold icons into the overflow'),
+            description: _('Select the programs to keep behind the chevron. An item asking for attention is temporarily shown in the taskbar.'),
         });
         page.add(overflow);
-
-        const entry = new Adw.EntryRow({title: _('Hidden item ids')});
-        entry.text = settings.get_strv('tray-hidden-items').join(', ');
-        entry.connect('apply', () => {
-            const ids = entry.text.split(',')
-                .map(s2 => s2.trim()).filter(s2 => s2);
-            settings.set_strv('tray-hidden-items', ids);
-        });
-        entry.show_apply_button = true;
-        overflow.add(entry);
+        this._watchTrayRows(settings, overflow);
 
         return page;
     }
@@ -186,8 +197,7 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         page.add(shortcuts);
         shortcuts.add(this._switch(settings, 'clipboard-history',
             _('Keep a clipboard history'),
-            _('Choosing an entry copies it; an extension cannot paste for '
-              + 'you on Wayland.')));
+            _('Select an entry to paste it into the previously focused application.')));
         shortcuts.add(this._switch(settings, 'super-number-keys',
             _('Super+1…9 reach taskbar buttons'),
             _('As on Windows. GNOME binds these to the favourites list, '
@@ -250,6 +260,100 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
     }
 
     /* ----------------------------------------------------------- helpers */
+
+    _arraySwitch(settings, key, id, title, cleanup = this._cleanup) {
+        const row = new Adw.SwitchRow({title});
+        const sync = () => {
+            row.active = settings.get_strv(key).includes(id);
+        };
+        sync();
+        row.connect('notify::active', () => {
+            const values = settings.get_strv(key);
+            if (row.active === values.includes(id))
+                return;
+            settings.set_strv(key, row.active ? [...values, id] : values.filter(value => value !== id));
+        });
+        const signal = settings.connect(`changed::${key}`, sync);
+        cleanup.push(() => settings.disconnect(signal));
+        return row;
+    }
+
+    _busCall(name, path, iface, method, args) {
+        return new Promise((resolve, reject) => {
+            Gio.DBus.session.call(name, path, iface, method, args, null,
+                Gio.DBusCallFlags.NONE, 3000, this._cancellable, (connection, result) => {
+                    try {
+                        resolve(connection.call_finish(result).deepUnpack());
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+        });
+    }
+
+    _watchTrayRows(settings, group) {
+        const watcher = 'org.kde.StatusNotifierWatcher';
+        const properties = 'org.freedesktop.DBus.Properties';
+        let generation = 0;
+        let rows = [];
+        let rowCleanup = [];
+        const refresh = async () => {
+            const ticket = ++generation;
+            const items = new Map();
+            try {
+                const [variant] = await this._busCall(watcher, '/StatusNotifierWatcher', properties, 'Get',
+                    new GLib.Variant('(ss)', [watcher, 'RegisteredStatusNotifierItems']));
+                await Promise.all(variant.deepUnpack().map(async service => {
+                    const slash = service.indexOf('/');
+                    const name = slash < 0 ? service : service.slice(0, slash);
+                    const path = slash < 0 ? '/StatusNotifierItem' : service.slice(slash);
+                    try {
+                        const [props] = await this._busCall(name, path, properties, 'GetAll',
+                            new GLib.Variant('(s)', ['org.kde.StatusNotifierItem']));
+                        const id = props.Id?.deepUnpack() || name;
+                        items.set(id, {title: props.Title?.deepUnpack() || id,
+                            icon: props.IconName?.deepUnpack() || 'application-x-executable-symbolic'});
+                    } catch {
+                        // 程序可能恰好退出；保留已存的折叠选择。
+                    }
+                }));
+            } catch {
+                // 托盘关闭或宿主不存在时，仍允许取消离线程序的折叠选择。
+            }
+            if (this._cancellable.is_cancelled() || ticket !== generation)
+                return;
+            for (const cleanup of rowCleanup)
+                cleanup();
+            rowCleanup = [];
+            for (const row of rows)
+                group.remove(row);
+            rows = [];
+            for (const id of settings.get_strv('tray-hidden-items')) {
+                if (!items.has(id))
+                    items.set(id, {title: id, offline: true});
+            }
+            for (const [id, item] of items) {
+                const row = this._arraySwitch(settings, 'tray-hidden-items', id, item.title, rowCleanup);
+                row.subtitle = item.offline ? _('Not currently running') : id;
+                row.add_prefix(new Gtk.Image({icon_name: item.icon ?? 'application-x-executable-symbolic'}));
+                group.add(row);
+                rows.push(row);
+            }
+            if (rows.length === 0) {
+                const row = new Adw.ActionRow({title: _('No tray programs are running')});
+                group.add(row);
+                rows.push(row);
+            }
+        };
+        const signal = Gio.DBus.session.signal_subscribe(watcher, watcher, null, '/StatusNotifierWatcher',
+            null, Gio.DBusSignalFlags.NONE, refresh);
+        this._cleanup.push(() => {
+            generation++;
+            Gio.DBus.session.signal_unsubscribe(signal);
+            rowCleanup.forEach(cleanup => cleanup());
+        });
+        refresh();
+    }
 
     _switch(settings, key, title, subtitle = null) {
         const row = new Adw.SwitchRow({title});

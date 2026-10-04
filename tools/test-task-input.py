@@ -19,10 +19,10 @@ def main():
     shell = ctx.Shell()
     env = dict(os.environ, XDG_CONFIG_HOME=str(Path(ctx.RUN) / 'config'),
                DBUS_SESSION_BUS_ADDRESS=shell.address,
-               WAYLAND_DISPLAY='w11test', GDK_BACKEND='wayland')
+               WAYLAND_DISPLAY='w11test', GDK_BACKEND='wayland',
+               XDG_DATA_HOME=str(Path(ctx.RUN) / 'app-data'))
     env.pop('DISPLAY', None)
-    app = subprocess.Popen(['gnome-calculator'], env=env,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    app = None
 
     def dump():
         reply = shell.conn.call_sync(ctx.BUS, ctx.OBJ, ctx.BUS, 'DumpGeometry',
@@ -50,11 +50,17 @@ def main():
         wait_for(lambda: dump()['focusApp'] == APP)
 
     try:
+        # 再运行一次 Calculator 会创建第二个窗口；此用例必须保持单窗口，不能测成缩略图行为。
+        if not any(b['id'] == APP and b['windows'] > 0 for b in dump()['bars'][0]['buttons']):
+            app = subprocess.Popen(['gnome-calculator'], env=env,
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         shell.trigger('windows')
         shell.pointer([{'move': [960, 540]}, {'wait': 250}])
         wait_for(lambda: any(b['id'] == APP and b['windows'] > 0
                             for b in dump()['bars'][0]['buttons']))
         time.sleep(1)
+        button = next(b for b in dump()['bars'][0]['buttons'] if b['id'] == APP)
+        assert button['windows'] == 1, f"此用例需要一个 Calculator 窗口，实际为 {button['windows']}"
         restore_focus()
         click_button()
         wait_for(lambda: dump()['focusApp'] != APP)
@@ -80,12 +86,13 @@ def main():
         assert 'JS ERROR' not in log, '测试 Shell 出现 JS ERROR'
         print('3 项输入检查通过，0 项失败', flush=True)
     finally:
-        app.terminate()
-        try:
-            app.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            app.kill()
-            app.wait()
+        if app:
+            app.terminate()
+            try:
+                app.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                app.kill()
+                app.wait()
 
 
 if __name__ == '__main__':

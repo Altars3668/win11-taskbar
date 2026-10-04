@@ -1,0 +1,47 @@
+#!/bin/bash
+# 完整 UI 回归：只操作 testbed 的独立桌面、总线和配置。
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/win11-taskbar-testbed"
+trap '"$ROOT/tools/testbed.sh" stop' EXIT
+
+"$ROOT/tools/check.sh"
+glib-compile-schemas --strict "$ROOT/schemas"
+node "$ROOT/tools/test-semantics.mjs"
+node "$ROOT/tools/test-layout-options.mjs"
+node "$ROOT/tools/test-ui-lifecycle.mjs"
+gjs -m "$ROOT/tools/test-application-order.js"
+"$ROOT/tools/testbed.sh" start
+"$ROOT/tools/testbed.sh" apps
+"$ROOT/tools/testbed.sh" verify
+/usr/bin/python3 "$ROOT/tools/test-taskbar-options.py"
+/usr/bin/python3 "$ROOT/tools/test-dbusmenu-storm.py"
+/usr/bin/python3 "$ROOT/tools/test-quick-pages.py"
+/usr/bin/python3 "$ROOT/tools/test-menu-input.py"
+/usr/bin/python3 "$ROOT/tools/test-task-input.py"
+/usr/bin/python3 "$ROOT/tools/test-material-input.py"
+
+# 与真实偏好服务相同的类型库和异步主循环；memory 后端不改变测试桌面的选择。
+LC_ALL=C.UTF-8 GSETTINGS_BACKEND=memory \
+GI_TYPELIB_PATH="/usr/lib/gnome-shell/girepository-1.0:/usr/lib/gnome-shell${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}" \
+LD_LIBRARY_PATH="/usr/lib/gnome-shell${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+XDG_CONFIG_HOME="$RUN/config" XDG_DATA_HOME="$RUN/data" WAYLAND_DISPLAY=w11test \
+DBUS_SESSION_BUS_ADDRESS="$(< "$RUN/bus")" \
+timeout 25 gjs -m "$ROOT/tools/test-prefs-ui.js" "$RUN/data/gnome-shell/extensions/win11-taskbar@altarscn.com"
+
+check_log() {
+/usr/bin/python3 - "$RUN/shell.log" <<'PY'
+import re, sys
+from pathlib import Path
+text = Path(sys.argv[1]).read_text()
+errors = re.findall(r'^.*(?:JS ERROR|Exception in callback|GNOME Shell-CRITICAL).*$', text, re.M)
+if errors:
+    raise SystemExit('\n'.join(errors))
+print('日志检查：没有 JavaScript 异常')
+PY
+}
+check_log
+# 包括停用还原和模拟会话结束后的再还原，此脚本会重新启动隔离 Shell。
+/usr/bin/python3 "$ROOT/tools/test-shortcuts.py"
+check_log
+printf '完整 UI 回归结束，0 项失败\n'
