@@ -23,10 +23,17 @@ Cases, with what the Windows model requires:
            and a new one opens there, in that one click
   passthrough  right click, then a left click somewhere else: the menu
            closes and the click still reaches what is under it
+  shell    right click, then a left click on the Start button: the menu
+           closes and Start opens, in that one click (needs the patched
+           compositor: the popup grab used to swallow the press)
   dropdown click a menu button, then click it again: its menu opens once
            and closes (the press that closes it is not passed through)
   menubar  left-press File, drag onto the first item, release: chosen
            (press-drag-release with the primary button is kept)
+
+After the cases, with no menu open, a click on the Start button must still
+open Start: a press the compositor holds and puts back must not leave the
+shell believing a button is down, which no client would notice.
 """
 import argparse
 import json
@@ -222,6 +229,27 @@ def run_case(shell, toolkit, libdir, case):
             else:
                 got['menu closed'] = 'CLOSED' in second and not menus
             return got
+        if case == 'shell':
+            reply = shell.conn.call_sync(BUS, OBJ, BUS, 'DumpGeometry', None, None,
+                                         Gio.DBusCallFlags.NONE, 3000, None)
+            start = json.loads(reply.unpack()[0])['bars'][0]['startButton']
+            at = [start['x'] + start['w'] // 2, start['y'] + start['h'] // 2]
+            shell.pointer([{'move': list(PRESS_AT)}, {'wait': 150}, {'press': 3},
+                           {'wait': 60}, {'release': 3}, {'wait': 400}])
+            first = probe.since(m)
+            m = probe.mark()
+            shell.trigger('button-events')
+            shell.pointer([{'move': at}, {'wait': 150}, {'press': 1},
+                           {'wait': 60}, {'release': 1}, {'wait': 700}])
+            second = probe.since(m)
+            opened = json.loads(shell.trigger('state'))['startMenu']
+            if os.environ.get('W11_DEBUG_EVENTS'):
+                print('stage button events:', shell.trigger('button-events'), file=sys.stderr)
+            if opened:
+                shell.trigger('start-menu-close')
+            return {'first shown': 'SHOWN' in first, 'menu closed': 'CLOSED' in second,
+                    'chose': any(l.startswith('ACTIVATED') for l in second),
+                    'start opened': bool(opened)}
         if case == 'dropdown':
             at = list(probe.drop)
             click = [{'move': at}, {'wait': 150}, {'press': 1}, {'wait': 60},
@@ -264,6 +292,7 @@ WANT = {
                'new menu at the second spot': True},
     'passthrough': {'first shown': True, 'click reached the canvas': True, 'chose': False,
                     'menu closed': True},
+    'shell': {'first shown': True, 'menu closed': True, 'chose': False, 'start opened': True},
     'dropdown': {'opened': True, 'second click closed it': True, 'reopened': False},
     'menubar': {'reached item': True, 'release chose': True},
 }
@@ -289,12 +318,27 @@ def run_taskbar(shell):
     return {'first opened': first == buttons[0][0], 'second opened in one click': second == buttons[1][0]}
 
 
+def start_button_works(shell):
+    """Click Start with nothing open; True if Start opened."""
+    reply = shell.conn.call_sync(BUS, OBJ, BUS, 'DumpGeometry', None, None,
+                                 Gio.DBusCallFlags.NONE, 3000, None)
+    start = json.loads(reply.unpack()[0])['bars'][0]['startButton']
+    at = [start['x'] + start['w'] // 2, start['y'] + start['h'] // 2]
+    shell.pointer([{'move': [at[0] + 200, at[1] - 300]}, {'wait': 150}, {'move': at},
+                   {'wait': 150}, {'press': 1}, {'wait': 60}, {'release': 1}, {'wait': 700}])
+    opened = json.loads(shell.trigger('state'))['startMenu']
+    if opened:
+        shell.trigger('start-menu-close')
+        time.sleep(0.5)
+    return bool(opened)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--gtk3-lib')
     ap.add_argument('--gtk4-lib')
     ap.add_argument('--toolkits', default='3,4')
-    ap.add_argument('--cases', default='drag,quick,hold,dismiss,reopen,passthrough,dropdown,menubar')
+    ap.add_argument('--cases', default='drag,quick,hold,dismiss,reopen,passthrough,shell,dropdown,menubar')
     ap.add_argument('--taskbar', action='store_true',
                     help='check the shell side on the taskbar instead')
     ap.add_argument('--expect-original', action='store_true',
@@ -322,6 +366,10 @@ def main():
             if bad and not args.expect_original:
                 failures += 1
             print(f'GTK{toolkit} {case:8} {verdict:7} {got}', flush=True)
+    alive = start_button_works(shell)
+    if not alive:
+        failures += 1
+    print(f'shell still takes clicks: {"ok" if alive else "FAIL"}', flush=True)
     for library in sorted(LIBRARIES):
         print('loaded', library)
     print(f'{failures} failure(s)')

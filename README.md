@@ -153,8 +153,11 @@ thing underneath. The same setting switches GNOME Shell's own right-click
 menus — the desktop background, app icons — to release, and `patches/`
 carries the model into GTK 3 and GTK 4 applications, Edge and Firefox.
 With a menu open, a right click somewhere else closes it and opens the
-menu there in the same click, as Windows does, instead of only closing it.
-There is a setting if you prefer press.
+menu there in the same click, as Windows does, instead of only closing it;
+with the mutter patch in `patches/` that holds for every application's
+popups, Edge's included, so a right-drag started with its menu open is
+still a mouse gesture, and a click on the taskbar lands even while a menu
+is open. There is a setting if you prefer press.
 
 **Also:** a two-line clock, the 12px show-desktop sliver with Windows'
 minimise/restore toggle and Aero Peek, per-workspace window filtering
@@ -199,6 +202,8 @@ Being straight about the gaps:
   in detail. Edge takes a Blink switch through its launcher
   (`tools/edge-context-menu.sh`), which is also what lets its mouse
   gestures start; Edge's own tab and toolbar menus cannot be changed.
+  A press outside a popup is the compositor's to deliver, so making it land
+  takes a mutter patch, also in `patches/`.
 * **Clipboard history is polled**, because GNOME has no
   clipboard-changed signal. It does paste for you: the shell is the
   compositor, so Clutter will hand out a virtual input device — the same
@@ -330,8 +335,8 @@ context-menu tests use, because GTK's menus react to events, not to API
 calls:
 
 ```bash
-tools/test-context-menu.py      # GTK 3 and GTK 4, eight cases each
-tools/test-edge-context-menu.py # Edge, with a throwaway profile
+tools/test-context-menu.py      # GTK 3 and GTK 4, nine cases each, then the shell
+tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at a time
 /usr/bin/python3 tools/test-menu-input.py # Start, calendar, account, cards, Resources, motion
 /usr/bin/python3 tools/test-task-input.py # actual left clicks and preview dismissal
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
@@ -359,6 +364,9 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/shortcuts.js` | The rest of the Windows key bindings. |
 | `lib/notificationCentre.js` | Notifications and the calendar. |
 | `lib/startMenu.js` | The Start menu. |
+| `lib/startPins.js` | Start's pinned apps, kept apart from the taskbar's, as on Windows. |
+| `lib/inputMethodPanel.js` | The input indicator and its flyout, Fcitx 5 or GNOME's input sources. |
+| `lib/notificationList.js` | One flat card per notification, newest first. |
 | `lib/superKey.js` | Making Super open it instead of the Overview. |
 | `lib/statusNotifier.js` | The StatusNotifierItem watcher and host. |
 | `lib/dbusMenu.js` | Tray icons' context menus. |
@@ -368,10 +376,11 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/autoHide.js` | Sliding out of the way behind a pressure barrier. |
 | `lib/shellMenus.js` | GNOME Shell's own right-click menus, switched to open on release. |
 | `lib/debugService.js` | Geometry for the tests, a trigger for UI that needs a click, a virtual pointer. Off by default. |
-| `patches/` | GTK 3 and GTK 4 patches for release-timed context menus, and why. |
+| `patches/` | GTK 3, GTK 4 and mutter patches for the Windows context-menu model, and why. |
 | `tools/test-context-menu.py`, `tools/ctxprobe/` | End-to-end test of the GTK menu model with real pointer events. |
 | `tools/build-gtk-debs.sh` | Builds the patched GTK packages, amd64 and i386. |
 | `tools/edge-context-menu.sh` | Puts Edge's page menus on mouse-up, through its launcher. |
+| `tools/testbed-dlopen.c` | Lets the test shell run a locally built libmutter-clutter (`TESTBED_LD_LIBRARY_PATH`). |
 
 Two places lay out children by hand rather than with `Clutter.BinLayout`:
 the panel's three zones and the inside of a task button. This is not

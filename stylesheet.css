@@ -1244,6 +1244,12 @@
     font-size: 11px;
 }
 
+/* 通知独立卡片占满列宽，不保留 GNOME 叠层消息的侧边 inset。 */
+.w11-flat-notification-list, .w11-notification-cards { margin: 0; padding: 0; }
+.w11-notification-cards { spacing: 8px; }
+.w11-flat-notification-card { margin: 0; padding: 8px; min-width: 0; }
+.w11-notification-empty { padding: 16px 0; font-size: 12px; }
+
 /* Our own notification centre, in place of GNOME's date menu. */
 .w11-notification-centre {
     background: none;
@@ -1325,7 +1331,33 @@
 .w11-quick-back { padding: 8px; border-radius: 4px; background: none; color: inherit; }
 .w11-quick-back:hover { background-color: rgba(0,0,0,0.06); }
 .dark .w11-quick-back:hover { background-color: rgba(255,255,255,0.08); }
-.w11-quick-page .quick-toggle-menu { background: none; border: none; box-shadow: none; padding: 0; }
+.w11-quick-page .quick-toggle-menu { background: none; border: none; box-shadow: none; padding: 0; margin: 0; }
+/* Windows WLAN 页：整行可点、两行文字、悬停底板；原生深色主题的半透明白字改为可读灰。 */
+.w11-quick-page .popup-menu-item {
+    min-height: 40px; padding: 8px 12px; spacing: 12px; border-radius: 4px; color: #1a1a1a;
+}
+.w11-quick-page .popup-menu-item:hover,
+.w11-quick-page .popup-menu-item:focus { background-color: rgba(0, 0, 0, 0.06); }
+.w11-quick-page .popup-menu-item > StIcon,
+.w11-quick-page .popup-menu-icon { icon-size: 16px; }
+.w11-quick-page .device-subtitle { color: rgba(0, 0, 0, 0.62); font-size: 12px; }
+.w11-quick-page .popup-separator-menu-item { margin: 4px 0; }
+.w11-flyout.dark .w11-quick-page .popup-menu-item { color: #ffffff; }
+.w11-flyout.dark .w11-quick-page .popup-menu-item:hover,
+.w11-flyout.dark .w11-quick-page .popup-menu-item:focus { background-color: rgba(255, 255, 255, 0.08); }
+.w11-flyout.dark .w11-quick-page .device-subtitle { color: rgba(255, 255, 255, 0.72); }
+/* Windows 11 开关：40×20 胶囊，开为强调色实心，关为描边。 */
+.w11-switch {
+    width: 40px; height: 20px; padding: 0 4px; border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.62); background-color: rgba(0, 0, 0, 0.02);
+}
+.w11-switch:checked { background-color: #0067c0; border-color: #0067c0; }
+.w11-switch-knob { width: 12px; height: 12px; border-radius: 6px; background-color: rgba(0, 0, 0, 0.62); }
+.w11-switch:checked .w11-switch-knob { background-color: #ffffff; }
+.w11-flyout.dark .w11-switch { border-color: rgba(255, 255, 255, 0.72); background-color: rgba(255, 255, 255, 0.04); }
+.w11-flyout.dark .w11-switch:checked { background-color: #4cc2ff; border-color: #4cc2ff; }
+.w11-flyout.dark .w11-switch-knob { background-color: rgba(255, 255, 255, 0.78); }
+.w11-flyout.dark .w11-switch:checked .w11-switch-knob { background-color: #000000; }
 .w11-quick-footer { spacing: 4px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
 .w11-quick-footer .quick-settings-system-item { background: none; padding: 0; margin: 0; border: none; }
 .w11-quick-footer-action, .w11-quick-footer .w11-qs-edit-button { padding: 8px; border-radius: 4px; background: none; color: inherit; }

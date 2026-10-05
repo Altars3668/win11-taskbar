@@ -41,8 +41,17 @@ def main():
     shell.trigger('windows')
     shell.pointer([{'move': [960, 500]}, {'wait': 400}])
     shell.trigger('quick-settings')
-    check('快捷主页面可见', lambda: quick() is not None)
+    check('快捷主页面可见且打开动画已接受输入', lambda: quick() is not None and not quick()['inputMuted'])
     main_height = quick()['content']['h']
+    # 页脚借走编辑按钮后，网格增删卡片引起的重排不能再去排它（曾触发 Clutter-CRITICAL）。
+    log = Path(ctx.RUN) / 'shell.log'
+    seen = log.read_text(errors='replace').count('set_child_at_index')
+    shell.trigger('test-wireless-toggle')
+    time.sleep(0.6)
+    shell.trigger('test-wireless-remove')
+    time.sleep(0.6)
+    check('页脚借走的编辑按钮不再参与网格重排',
+          lambda: log.read_text(errors='replace').count('set_child_at_index') == seen)
     shell.trigger('wifi-submenu')
     check('Wi-Fi 是完整子页而非原地展开', lambda: quick()['page']['title'] is not None and
           not quick()['page']['gridVisible'])
@@ -70,17 +79,37 @@ def main():
           all(t['title'] != 'Reboot Into' or not t['visible'] for t in quick()['tiles']))
     click(quick()['page']['footerActions'][0])
     check('底部操作也使用子页', lambda: quick()['page']['title'] == 'Reboot Into' and not quick()['page']['gridVisible'])
+    harmless = next(item for item in quick()['page']['nativeItems'] if item['label'] == 'Test entry — no power action')
+    click(harmless)
+    check('原生子页条目实际执行回调，不被隐藏菜单 grab 吞掉',
+          lambda: quick()['page']['testClicks'] > 0 and quick()['page']['title'] == 'Reboot Into')
     shell.trigger('quick-page-back')
     shell.trigger('test-quick-action-remove')
+    shell.trigger('test-wireless-toggle')
+    time.sleep(0.4)
+    shell.trigger('test-wireless-open')
+    check('WLAN 类子页标题右侧显示开关，原生大标题隐藏',
+          lambda: quick()['page']['title'] == 'Test Wi-Fi' and quick()['page']['switch']['visible'] and
+          quick()['page']['nativeHeaderVisible'] is False)
+    before = quick()['page']['testWireless']['checked']
+    off_knob = quick()['page']['switch']['knob']['x']
+    click(quick()['page']['switch'])
+    check('页头开关真正切换原生卡片状态', lambda: quick()['page']['testWireless']['checked'] != before and
+          quick()['page']['switch']['checked'] != before)
+    check('开关圆点随状态移动', lambda: quick()['page']['switch']['knob']['x'] != off_knob)
+    click(quick()['page']['back'])
+    check('返回后恢复原生标题，供 GNOME 自身使用', lambda: quick()['page']['title'] is None and
+          quick()['page']['testWireless']['headerVisible'])
+    shell.trigger('test-wireless-remove')
     shell.trigger('quick-settings-close')
     shell.trigger('quick-links')
     time.sleep(.4)
     menu = dump()['quickLinks']
     first = menu['items'][0]
     start = dump()['startButton']
-    assert abs(first['x'] - start['x']) < 20, (first, start)
+    assert abs(first['x'] + first['w'] / 2 - start['x'] - start['w'] / 2) < 20, (first, start)
     count += 1
-    print('ok Win+X 的左边缘锚定开始按钮', flush=True)
+    print('ok Win+X 相对开始图标居中', flush=True)
     shell.trigger('quick-links-close')
     shell.trigger('notifications')
     time.sleep(.4)

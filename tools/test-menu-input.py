@@ -87,7 +87,8 @@ def main():
     def account_anchored():
         start = dump()['bars'][0]['startMenu']
         menu, avatar = start['accountMenu'], start['avatar']
-        return abs(menu['x'] - avatar['x']) < 4 and menu['y'] + menu['h'] <= avatar['y']
+        return (abs(menu['x'] + menu['w'] / 2 - avatar['x'] - avatar['w'] / 2) < 4 and
+                menu['y'] + menu['h'] <= avatar['y'])
     check('账户菜单锚定头像向上出现，不从侧边滑出', account_anchored)
     shell.trigger('start-menu-close')
     time.sleep(0.3)

@@ -118,6 +118,8 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         group.add(this._combo(settings, 'start-layout', _('Menu size'), [
             ['compact', _('Compact \u2014 six columns')],
             ['wide', _('Wide \u2014 eight columns (Insider)')],
+            ['fullscreen', _('Full-screen Start')],
+            ['app-grid', _('GNOME application screen')],
         ]));
         const folders = new Adw.PreferencesGroup({
             title: _('Shortcuts beside the power button'),
@@ -150,6 +152,8 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
 
         group.add(this._switch(settings, 'show-tray',
             _('Show tray icons')));
+        group.add(this._switch(settings, 'show-input-method', _('Input language panel'),
+            _('Choose a configured Fcitx input method or GNOME keyboard source.')));
         group.add(this._switch(settings, 'show-system-indicators',
             _('Move Quick Settings into the taskbar'),
             _('Network, volume and battery. With the top bar hidden these ' +

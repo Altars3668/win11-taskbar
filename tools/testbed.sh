@@ -13,6 +13,12 @@
 #   tools/testbed.sh log       show the shell log, minus DING noise
 #   tools/testbed.sh stop      tear it down
 #   tools/testbed.sh all       start, launch apps, verify, stop
+#
+# TESTBED_LD_LIBRARY_PATH=DIR loads a locally built libmutter into the test
+# shell only, so a compositor patch can be tried before it is installed. If
+# DIR also has libmutter-clutter-18.so.0, tools/testbed-dlopen.c is built
+# and preloaded so GObject introspection does not load the installed one
+# beside it.
 
 set -u
 UUID=win11-taskbar@altarscn.com
@@ -83,6 +89,15 @@ do_start() {
     ln -sfn "$ROOT" "$target"
     glib-compile-schemas "$ROOT/schemas" || return 1
 
+    local preload=""
+    if [ -n "${TESTBED_LD_LIBRARY_PATH:-}" ] &&
+       [ -e "$TESTBED_LD_LIBRARY_PATH/libmutter-clutter-18.so.0" ]; then
+        # 用系统 gcc：PATH 里的 cc 可能是别的工具。
+        /usr/bin/gcc -shared -fPIC -O2 -o "$RUN/testbed-dlopen.so" \
+            "$ROOT/tools/testbed-dlopen.c" -ldl || return 1
+        preload="export TESTBED_CLUTTER=\"$TESTBED_LD_LIBRARY_PATH/libmutter-clutter-18.so.0\" LD_PRELOAD=\"$RUN/testbed-dlopen.so\""
+    fi
+
     cat > "$RUN/inner.sh" <<INNER
 #!/bin/bash
 printf '%s' "\$DBUS_SESSION_BUS_ADDRESS" > "$RUN/bus"
@@ -92,6 +107,8 @@ gsettings set org.gnome.shell disabled-extensions "[]"
 gsettings set org.gnome.shell enabled-extensions "['$UUID']"
 gsettings --schemadir "$ROOT/schemas" set \
     org.gnome.shell.extensions.win11-taskbar debug-service true
+${TESTBED_LD_LIBRARY_PATH:+export LD_LIBRARY_PATH="$TESTBED_LD_LIBRARY_PATH"}
+$preload
 exec gnome-shell --headless --virtual-monitor 1920x1080 \
     --wayland-display $DISPLAY_NAME
 INNER

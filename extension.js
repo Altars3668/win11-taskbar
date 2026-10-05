@@ -148,7 +148,15 @@ export default class Win11TaskbarExtension extends Extension {
             // It does have to be held down, though: the shell shows the
             // panel again whenever the Overview opens, so hiding it once
             // is not enough.
-            const box = Main.layoutManager.panelBox;
+            const layout = Main.layoutManager;
+            const box = layout.panelBox;
+            // GNOME 50 的 strut 计算不检查 visible；隐藏演员仍会保留顶边工作区。
+            const data = layout._trackedActors.find(record => record.actor === box);
+            this._panelStrutData = data ?? null;
+            this._panelHadStrut = data?.affectsStruts ?? false;
+            if (data)
+                data.affectsStruts = false;
+            layout._queueUpdateRegions();
             box.hide();
             this._panelWatchId = box.connect('notify::visible', () => {
                 if (box.visible && this._topPanelHidden)
@@ -169,6 +177,11 @@ export default class Win11TaskbarExtension extends Extension {
             box.disconnect(this._panelWatchId);
             this._panelWatchId = 0;
         }
+        if (this._panelStrutData &&
+            Main.layoutManager._trackedActors.includes(this._panelStrutData))
+            this._panelStrutData.affectsStruts = this._panelHadStrut;
+        this._panelStrutData = null;
+        Main.layoutManager._queueUpdateRegions();
         box.show();
     }
 }

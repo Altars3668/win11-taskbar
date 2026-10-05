@@ -13,6 +13,14 @@ pointer. It reports, for a right click held for a moment:
 
 then tries a right-drag to the left — Edge's Back gesture — and reports
 whether the page went back and whether a menu appeared anyway.
+
+Cases that open the menu first and then click again, as on Windows:
+  reopen              a right click elsewhere opens a new menu there
+  gesture-after-menu  a right-drag elsewhere is still Edge's Back gesture
+  left-after-menu     a left click elsewhere closes the menu and reaches the page
+  menu-item           a left click on Back in the menu still chooses it
+  start-after-menu    a left click on the Start button closes the menu and
+                      opens Start
 """
 import argparse
 import importlib.util
@@ -71,7 +79,9 @@ def shoot(shell, prefix, name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--flag', action='append', default=[])
-    ap.add_argument('--case', choices=('click', 'gesture', 'reopen'), default='click')
+    ap.add_argument('--case', default='click',
+                    choices=('click', 'gesture', 'reopen', 'gesture-after-menu',
+                             'left-after-menu', 'menu-item', 'start-after-menu'))
     ap.add_argument('--edge', default=EDGE,
                     help='what to run; /usr/bin/microsoft-edge-dev tests the installed launcher')
     ap.add_argument('--shot', help='screenshot path prefix')
@@ -107,15 +117,20 @@ def main():
                                  + shell.trigger('windows'))
             time.sleep(0.5)
         time.sleep(1.0)
-        fx, fy, fw, fh = edge_window(shell)['frame']
-        shell.pointer([{'move': [fx + fw // 2, fy + fh // 2]}, {'wait': 200}, {'press': 1},
-                       {'wait': 60}, {'release': 1}, {'wait': 300}])
-        deadline = time.time() + 20
-        while not (page_events(shell) or '').startswith('B:'):
-            if time.time() > deadline:
-                raise SystemExit('Edge never reached page B; windows: '
-                                 + shell.trigger('windows'))
-            time.sleep(0.5)
+        # Right after the shell starts, the first click can land before Edge
+        # takes input; click again rather than fail.
+        for attempt in range(3):
+            fx, fy, fw, fh = edge_window(shell)['frame']
+            shell.pointer([{'move': [fx + fw // 2, fy + fh // 2]}, {'wait': 200}, {'press': 1},
+                           {'wait': 60}, {'release': 1}, {'wait': 300}])
+            deadline = time.time() + 6
+            while not (page_events(shell) or '').startswith('B:') and time.time() < deadline:
+                time.sleep(0.5)
+            if (page_events(shell) or '').startswith('B:'):
+                break
+        else:
+            raise SystemExit('Edge never reached page B; windows: '
+                             + shell.trigger('windows'))
         time.sleep(1.5)
         fx, fy, fw, fh = edge_window(shell)['frame']
         at = (fx + fw // 2, fy + fh // 2 + 60)
@@ -145,7 +160,35 @@ def main():
             shoot(shell, args.shot, 'second')
             print(f'first click at {at}:  events={first[0]!r} menus={first[1]}')
             print(f'second click at {other}: events={second[0]!r} menus={second[1]}')
+        elif args.case in ('left-after-menu', 'menu-item', 'start-after-menu'):
+            shell.pointer([{'move': list(at)}, {'wait': 200}, {'press': 3}, {'wait': 60},
+                           {'release': 3}, {'wait': 700}])
+            menus = [w['buffer'] for w in popups(shell)]
+            first = page_events(shell)
+            if args.case == 'left-after-menu':
+                target = (at[0] - 250, at[1] + 200)
+            elif args.case == 'menu-item':
+                # Back is the first item; the buffer starts at the shadow.
+                target = (menus[0][0] + 80, menus[0][1] + 24) if menus else at
+            else:
+                reply = shell.conn.call_sync(ctx.BUS, ctx.OBJ, ctx.BUS, 'DumpGeometry', None, None,
+                                             ctx.Gio.DBusCallFlags.NONE, 3000, None)
+                start = json.loads(reply.unpack()[0])['bars'][0]['startButton']
+                target = (start['x'] + start['w'] // 2, start['y'] + start['h'] // 2)
+            shell.pointer([{'move': list(target)}, {'wait': 200}, {'press': 1}, {'wait': 60},
+                           {'release': 1}, {'wait': 900}])
+            state = json.loads(shell.trigger('state'))
+            print(f'right click at {at}: events={first!r} menu={bool(menus)}')
+            print(f'left click at {target}: page={page_events(shell)!r} menu={bool(popups(shell))} '
+                  f'start={state["startMenu"]}')
+            if state['startMenu']:
+                shell.trigger('start-menu-close')
         else:
+            if args.case == 'gesture-after-menu':
+                shell.pointer([{'move': list(at)}, {'wait': 200}, {'press': 3}, {'wait': 80},
+                               {'release': 3}, {'wait': 700}])
+                print(f'initial context menu: events={page_events(shell)!r} menus={bool(popups(shell))}')
+                at = (at[0] - 250, at[1] + 140)
             # Edge's Back gesture: hold the right button and draw leftwards.
             steps = [{'move': list(at)}, {'wait': 200}, {'press': 3}, {'wait': 80}]
             for i in range(1, 21):

@@ -17,6 +17,8 @@ gjs -m "$ROOT/tools/test-application-order.js"
 /usr/bin/python3 "$ROOT/tools/test-taskbar-options.py"
 /usr/bin/python3 "$ROOT/tools/test-dbusmenu-storm.py"
 /usr/bin/python3 "$ROOT/tools/test-quick-pages.py"
+/usr/bin/python3 "$ROOT/tools/test-start-pins.py"
+/usr/bin/python3 "$ROOT/tools/test-layout-functional.py"
 /usr/bin/python3 "$ROOT/tools/test-menu-input.py"
 /usr/bin/python3 "$ROOT/tools/test-task-input.py"
 /usr/bin/python3 "$ROOT/tools/test-material-input.py"
@@ -34,7 +36,7 @@ check_log() {
 import re, sys
 from pathlib import Path
 text = Path(sys.argv[1]).read_text()
-errors = re.findall(r'^.*(?:JS ERROR|Exception in callback|GNOME Shell-CRITICAL).*$', text, re.M)
+errors = re.findall(r'^.*(?:JS ERROR|Exception in callback|GNOME Shell-CRITICAL|Clutter-CRITICAL).*$', text, re.M)
 if errors:
     raise SystemExit('\n'.join(errors))
 print('日志检查：没有 JavaScript 异常')

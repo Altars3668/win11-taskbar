@@ -65,7 +65,8 @@ def main():
         time.sleep(1)
         bar = dump()
         tray, system, clock, desktop = (bar[k] for k in ['tray', 'systemIndicators', 'clock', 'showDesktop'])
-        assert system['x'] - tray['x'] - tray['w'] == 4
+        input_button = bar['inputMethod']['button']
+        assert system['x'] - input_button['x'] - input_button['w'] == 4
         assert clock['x'] - system['x'] - system['w'] == 8
         assert desktop['x'] - clock['x'] - clock['w'] == 4
         count += 1

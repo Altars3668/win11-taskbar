@@ -1,9 +1,10 @@
 # Context menus, the Windows way
 
-Not part of the extension. These change GTK, because the behaviour they fix
-is GTK's, in each application's own process, and no shell extension can
-reach it. The same model is applied to the shell's own menus, to Edge and
-to Firefox, each by the means that layer offers; see the table below.
+Not part of the extension. These change GTK and mutter, because the
+behaviour they fix is GTK's, in each application's own process, or the
+compositor's, and no shell extension can reach either. The same model is
+applied to the shell's own menus, to Edge and to Firefox, each by the means
+that layer offers; see the table below.
 
 ## What the difference actually is
 
@@ -39,7 +40,8 @@ needed to open one where you meant.
 | GTK 4 applications | a popover popped up from a right press is shown on its release; unpaired right releases never click; a press outside a context menu closes it and still lands | `gtk4-windows-context-menu.patch` |
 | GNOME Shell's own menus (desktop background, app icons) | `recognize-on-press` turned off on their right-click gestures; a right click outside an open menu reaches what it landed on | `lib/shellMenus.js`, setting `context-menu-on-release` |
 | This extension's menus | opened on release | `lib/taskButton.js`, `lib/shellButtons.js`, `lib/trayArea.js` |
-| Microsoft Edge, page content | `--blink-settings=showContextMenuOnMouseUp=true` through Edge's launcher; a right click outside its menu already opens a new one there | `tools/edge-context-menu.sh` |
+| Microsoft Edge, page content | `--blink-settings=showContextMenuOnMouseUp=true` through Edge's launcher | `tools/edge-context-menu.sh` |
+| The compositor, for every Wayland client | a press outside a popup closes it and still lands — where the toolkit does not do it itself, as Chromium on Linux does not, and on other windows and the shell | `mutter-windows-popup-press.patch` |
 | Firefox | `ui.context_menus.after_mouseup` in the profile's `user.js` | per profile |
 
 ## How the GTK patches work
@@ -108,8 +110,47 @@ has gone by then, and both reach what is under the pointer. Menu managers
 bind the shell's handler when a menu is added, so the extension wraps it
 before it builds its taskbars. Left clicks keep the shell's behaviour.
 
-Edge needs nothing for this part: its menu controller already passes a
-right click outside the menu on to the page, which opens a new menu there.
+## The compositor
+
+A press outside a popup is the compositor's to deliver, and mutter spends
+it. Under a popup grab it only ends the grab: a press on the client's own
+window still reaches the client while the client believes its menu is
+open, and a press on another window or on the shell is lost. Chromium's
+context menus take no grab at all, so a press on the page goes to the page,
+where its menu controller closes the menu and drops the press — on Windows
+the same controller reposts it. A right click elsewhere still seems to work,
+because the page opens a new menu on the release, but the page never saw
+the press: a mouse gesture started with the menu open does not start, and a
+left click on a link only closes the menu. (`--use-wayland-explicit-grab`
+makes Chromium take grabs, but mutter then gives the popup keyboard focus,
+which Chromium reads as its window going inactive, and the menu closes as
+soon as it opens.)
+
+`mutter-windows-popup-press.patch` holds such a press, takes the popups
+down with `popup_done`, and once the client has destroyed them, or after
+200 ms, puts the press back with anything that arrived meanwhile, so it
+reaches what is under the pointer — the page, another window, the taskbar.
+A menu dropped down from a button still takes a press on that button as
+closing it. Of the popups that take no grab, only those hung from a single
+point under a toplevel are covered: Chromium's and Electron's context
+menus, not tooltips, completion lists or dropdowns, which must survive a
+press elsewhere. The client takes its menu down itself, submenus first;
+unmapping the parent first would be a protocol error.
+
+A press that arrives while the stage is grabbed — a popup grab is a stage
+grab — has already been counted by Clutter as the start of an implicit grab
+on the grab's actor. Put back as it is, it would be counted twice, and after
+the release Clutter would still believe a button is down and stop
+delivering pointer events to the shell. No client notices that, so it is
+easy to miss. The patch drops the stale grab first with
+`clutter_stage_maybe_lost_implicit_grab`, which it exports from
+libmutter-clutter.
+
+It is patch 08 of this machine's mutter package, applied with quilt to
+Ubuntu's source like the others there; the copy here is for reference.
+`TESTBED_LD_LIBRARY_PATH=DIR tools/testbed.sh start` runs the test shell
+on a libmutter and libmutter-clutter built from the patched tree, without
+installing them.
 
 ## What is not covered
 
@@ -124,7 +165,8 @@ right click outside the menu on to the page, which opens a new menu there.
   program running here is the Nextcloud client, and its tray menu is drawn
   by this extension.
 - **Electron applications** would take the same `--blink-settings` switch
-  as Edge, one application at a time. Not done.
+  as Edge, one application at a time, to open menus on release. Not done.
+  A press outside their context menus lands, through the compositor.
 - Applications that build menus from something other than GtkMenu or
   GtkPopover.
 
@@ -143,8 +185,12 @@ and release events. For each of GTK 3 and GTK 4:
 | `dismiss` | right click, then a left click far away: the menu closes and chooses nothing — so a menu shown after the release still holds its popup grab |
 | `reopen` | right click, then a right click somewhere else: the menu closes and a new one opens there, in that one click |
 | `passthrough` | right click, then a left click somewhere else: the menu closes and the click still reaches what is under it |
+| `shell` | right click, then a left click on the Start button: the menu closes and Start opens, in that one click (the compositor patch) |
 | `dropdown` | click a menu button, then click it again: its menu opens once and closes, and does not reopen |
 | `menubar` | left-press File, drag onto the first item, release: chosen |
+
+After the cases, a click on the Start button with nothing open must still
+open Start, which is how a stale implicit grab in the shell shows up.
 
 `--gtk3-lib DIR --gtk4-lib DIR` tests a build tree before installing it;
 `--expect-original` reports the stock behaviour instead of failing on it;
@@ -155,9 +201,14 @@ task button, then another, and the second jump list opens in that click
 `tools/test-edge-context-menu.py` does the same for Edge, with a throwaway
 profile: when the page sees `mousedown`, `mouseup` and `contextmenu`, when
 the menu window appears, whether a right-drag to the left goes back
-without a menu, and (`--case reopen`) whether a second right click
-elsewhere opens a new menu there. `--edge /usr/bin/microsoft-edge-dev`
-tests the installed launcher.
+without a menu. With a menu open first, `--case reopen` checks that a
+right click elsewhere reaches the page and opens a new menu there,
+`gesture-after-menu` that a right-drag elsewhere is still a gesture,
+`left-after-menu` that a left click elsewhere reaches the page,
+`menu-item` that a click on an item still chooses it, and
+`start-after-menu` that a click on the Start button opens Start. The cases
+after a menu need the compositor patch. `--edge
+/usr/bin/microsoft-edge-dev` tests the installed launcher.
 
 ## Building and installing
 
