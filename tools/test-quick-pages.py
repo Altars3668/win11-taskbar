@@ -78,28 +78,43 @@ def main():
     shell.trigger('keys:' + json.dumps([{'press': 0xff1b}, {'wait': 60}, {'release': 0xff1b}]))
     time.sleep(.3)
     shell.trigger('test-quick-action')
-    check('Reboot Into 并入电源菜单，不再独占一排', lambda: quick()['page']['mergedActions'] == ['Reboot into…'] and
+    check('快捷面板不放电源按钮，Reboot Into 磁贴也隐藏', lambda: not quick()['page']['power']['visible'] and
+          'Reboot Into' in quick()['page']['hiddenTiles'] and
           all(t['title'] != 'Reboot Into' or not t['visible'] for t in quick()['tiles']))
-    click(settled(lambda: quick()['page']['power']))
-    def after_restart():
-        labels = [i['label'] for i in quick()['page']['nativeItems']]
-        return labels.index('Reboot into…') == labels.index('Restart…') + 1
-    check('电源菜单在 Restart 之后列出 Reboot into…', lambda: quick()['page']['title'] == 'Power Off' and
-          after_restart())
-    entry = settled(lambda: next(item for item in quick()['page']['nativeItems'] if item['label'] == 'Reboot into…'))
+    shell.trigger('quick-settings-close')
+    time.sleep(0.4)
+    shell.trigger('start-menu')
+    time.sleep(0.5)
+    click(settled(lambda: dump()['startMenu']['powerButton']))
+    def start_power():
+        return dump()['startMenu']['powerMenu']
+    def after_restart(labels, entry):
+        # Just after Restart; last where the session cannot restart, as
+        # the isolated shell cannot.
+        place = labels.index(entry)
+        return place == labels.index('Restart') + 1 if 'Restart' in labels else place == len(labels) - 1
+    check('开始菜单的电源菜单在 Restart 后（没有 Restart 时在最后）列出 Reboot into…',
+          lambda: start_power() and after_restart([i['label'] for i in start_power()['items']], 'Reboot into…'))
+    reboot = next(i for i in start_power()['items'] if i['label'] == 'Reboot into…')
+    click(reboot)
+    entry = settled(lambda: next(sub for i in start_power()['items'] if i['label'] == 'Reboot into…'
+                                 for sub in i['submenu'] if sub['label'] == 'Test entry — no power action'))
+    before = dump()['testClicks']
     click(entry)
-    check('Reboot into… 打开启动项子页', lambda: quick()['page']['title'] == 'Reboot Into' and
-          not quick()['page']['gridVisible'])
-    harmless = settled(lambda: next(item for item in quick()['page']['nativeItems']
-                                    if item['label'] == 'Test entry — no power action'))
-    click(harmless)
-    check('原生子页条目实际执行回调，不被隐藏菜单 grab 吞掉',
-          lambda: quick()['page']['testClicks'] > 0 and quick()['page']['title'] == 'Reboot Into')
-    click(settled(lambda: quick()['page']['back']))
-    check('从启动项子页返回电源页', lambda: quick()['page']['title'] == 'Power Off')
-    click(settled(lambda: quick()['page']['back']))
-    check('再返回回到主页', lambda: quick()['page']['title'] is None and quick()['page']['gridVisible'])
+    check('开始菜单里选启动项会执行原扩展的动作并收起开始菜单', lambda: dump()['testClicks'] == before + 1 and
+          not dump()['startMenu']['open'])
+    shell.trigger('quick-links')
+    time.sleep(0.4)
+    def shutdown_submenu():
+        item = next(i for i in dump()['quickLinks']['items'] if i['label'] == 'Shut down or sign out')
+        return [sub['label'] for sub in item['submenu']]
+    check('Win+X 的关机或注销在 Restart 后（没有 Restart 时在最后）列出启动项',
+          lambda: after_restart(shutdown_submenu(), 'Reboot into Test entry — no power action'))
+    shell.trigger('quick-links-close')
+    time.sleep(0.3)
     shell.trigger('test-quick-action-remove')
+    shell.trigger('quick-settings')
+    time.sleep(0.6)
     shell.trigger('test-wireless-toggle')
     time.sleep(0.4)
     shell.trigger('test-wireless-open')
@@ -137,8 +152,10 @@ def main():
     count += 1
     print('ok 日历七列左右留白平衡', flush=True)
     shell.trigger('notifications-close')
-    log = Path(ctx.RUN, 'shell.log').read_text()
-    assert 'JS ERROR' not in log and 'Exception in callback' not in log
+    # 收起开始菜单的电源条目在自己的点击里关掉菜单：菜单不能在点击松开前就被销毁。
+    log = Path(ctx.RUN, 'shell.log').read_text(errors='replace')
+    for marker in ('JS ERROR', 'Exception in callback', 'Clutter-CRITICAL', 'St-CRITICAL', 'Gjs-CRITICAL'):
+        assert marker not in log, marker
     print(f'{count} 项子页与菜单检查通过，0 项失败', flush=True)
 
 

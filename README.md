@@ -103,6 +103,17 @@ Windows-shaped reimplementation of those would be worse at the part that
 matters. Tiles with a sub-page open it the way Windows opens its Wi-Fi
 list.
 
+Power choices are not in quick settings, as they are not on Windows: they
+are in Start and Win+X. When another extension lists systems to restart
+into (Custom Reboot's "Reboot into…" tile), its tile is hidden and its
+entries appear after Restart in both menus, each still run by that
+extension.
+
+**Switching input.** Win+Space opens the input flyout with the next input
+method marked; Space moves on, Shift+Space back, and letting go of the
+Windows key chooses — a quick tap switches at once. Fcitx 5's groups and
+GNOME's input sources both work.
+
 *The notification centre* is ours: notifications above, calendar below, in
 a 338-wide column down the right edge, which is Windows' arrangement.
 GNOME's date menu puts the two side by side and lives in the top bar we
@@ -356,6 +367,7 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-slider-thumb.py # the sliders' Windows thumb, on a slider that moves nothing
 /usr/bin/python3 tools/test-tray-overflow.py # a blinking tray icon, and the overflow's light dismiss
 /usr/bin/python3 tools/test-attention.py  # a window asking for attention flashes its button
+/usr/bin/python3 tools/test-input-switch.py # Win+Space: the list, Space onward, release to choose
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
 node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
@@ -387,6 +399,8 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/startMenu.js` | The Start menu. |
 | `lib/startPins.js` | Start's pinned apps, kept apart from the taskbar's, as on Windows. |
 | `lib/inputMethodPanel.js` | The input indicator and its flyout, Fcitx 5 or GNOME's input sources. |
+| `lib/inputSwitcher.js` | Win+Space and Shift+Win+Space, taken from GNOME and handed to the input flyout. |
+| `lib/rebootTargets.js` | Another extension's "Reboot into…" entries, offered after Restart in Start and Win+X. |
 | `lib/notificationList.js` | One flat card per notification, newest first; Clear all, and cards that slide out. |
 | `lib/notificationPersistence.js` | Keeping an app's notifications after it quits, as Windows does. |
 | `lib/wifiFlow.js` | Joining a Wi-Fi network in place: Connect, then the key in the list. |

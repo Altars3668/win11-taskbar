@@ -830,6 +830,12 @@
     height: 46px;
 }
 
+/* Measured: the card splits down the middle, and the chevron is Windows'
+   small one — 6×10 against the 16px glyph beside it — not a 16px icon. */
+.w11-flyout .w11-quick-split .quick-toggle-menu-button StIcon {
+    icon-size: 12px;
+}
+
 .w11-flyout .w11-quick-split .quick-toggle-menu-button {
     width: 46px;
     min-width: 0;

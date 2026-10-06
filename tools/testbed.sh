@@ -33,12 +33,26 @@
 set -u
 UUID=win11-taskbar@altarscn.com
 ROOT="${WIN11_TASKBAR_TEST_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/win11-taskbar-testbed"
+USER_RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+RUN="$USER_RUNTIME/win11-taskbar-testbed"
+# The test session's own runtime directory. GNOME Shell keeps a file there,
+# gnome-shell-disable-extensions, for the first minute after it starts; if
+# the session's shell fails while the file is there, systemd switches every
+# user extension off. A test shell started in the user's runtime directory
+# put the file in the way of the real session's logout — and the next login
+# came up with all extensions disabled. The whole test session lives in it,
+# its bus and the dconf service that bus starts included: dconf tells its
+# readers that a value changed through a file in the runtime directory, so
+# a shell and a dconf service apart would not see each other's writes.
+# PipeWire is still the user's, as before — the screencast tests record
+# through it — while the sound server's socket stays out of reach.
+XDG_PRIVATE="$RUN/xdg"
 DISPLAY_NAME=w11test
 BUS=org.gnome.Shell.Extensions.Win11Taskbar
 OBJ=/org/gnome/Shell/Extensions/Win11Taskbar
 
 mkdir -p "$RUN/config/cache"
+mkdir -p -m 700 "$XDG_PRIVATE"
 
 session_env() {
     export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
@@ -91,9 +105,17 @@ do_stop() {
 
     # A shell that died badly can leave the socket behind; without clearing
     # it mutter refuses to start with "unable to lock lockfile".
-    local sock="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/$DISPLAY_NAME"
+    local sock="$XDG_PRIVATE/$DISPLAY_NAME"
     if [ -e "$sock" ] && ! fuser "$sock" >/dev/null 2>&1; then
         rm -f "$sock" "$sock.lock"
+    fi
+    # The link clients find the socket by, in the user's runtime directory —
+    # and a socket left there by a test shell from before it had its own.
+    local link="$USER_RUNTIME/$DISPLAY_NAME"
+    if [ -L "$link" ]; then
+        rm -f "$link"
+    elif [ -S "$link" ] && ! fuser "$link" >/dev/null 2>&1; then
+        rm -f "$link" "$link.lock"
     fi
 }
 
@@ -143,7 +165,8 @@ INNER
 
     session_env
     unset DBUS_SESSION_BUS_ADDRESS
-    setsid dbus-run-session -- bash "$RUN/inner.sh" > "$RUN/shell.log" 2>&1 &
+    XDG_RUNTIME_DIR="$XDG_PRIVATE" PIPEWIRE_RUNTIME_DIR="$USER_RUNTIME" \
+        setsid dbus-run-session -- bash "$RUN/inner.sh" > "$RUN/shell.log" 2>&1 &
     echo $! > "$RUN/pid"
 
     echo -n "waiting for the shell"
@@ -152,6 +175,9 @@ INNER
             session_env
             if timeout 5 gdbus introspect --session --dest "$BUS" \
                  --object-path "$OBJ" >/dev/null 2>&1; then
+                # Clients look for the display in the user's runtime
+                # directory, as before.
+                ln -sfn "$XDG_PRIVATE/$DISPLAY_NAME" "$USER_RUNTIME/$DISPLAY_NAME"
                 echo " ok"
                 return 0
             fi
