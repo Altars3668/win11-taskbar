@@ -195,7 +195,13 @@ Apps pick it up when they next start.
 
 **Snap layouts.** Win+Z opens Windows 11's snap layouts at the focused
 window's top right, below its title bar: six layouts in 98×64 tiles, numbered
-— a number picks a layout, the next a zone — or a click on a zone. Dragging a
+— a number picks a layout, the next a zone — or a click on a zone. Resting
+the pointer on a window's Maximise button opens them under it, after the
+900ms Windows waits, and they go 200ms after the pointer has left both. The
+shell is not told where an app draws that button, so this works where it is
+known, measured in the test session: GTK apps with Windows' title bars on,
+Edge and other Chromium browsers, VS Code and other Electron apps
+(`lib/captionButtons.js`). Dragging a
 window up against the top of the screen, under its middle, opens them as a
 bar there instead, and letting go over a zone puts the window in it.
 Dragging it against a side puts it in that half, into a corner in that
@@ -482,7 +488,7 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-search.py     # Search in its four styles, under the pointer, and what a click opens
 /usr/bin/python3 tools/test-edges.py      # the bar on each edge, at 64 and 32px, and what opens from it
 /usr/bin/python3 tools/test-window-animations.py # open, minimise, restore, close a window of its own
-/usr/bin/python3 tools/test-snap-layouts.py # Win+Z by keys and pointer, snap assist, dragging to the top and the edges
+/usr/bin/python3 tools/test-snap-layouts.py # Win+Z, resting on Maximise, snap assist, dragging to the top and the edges
 /usr/bin/python3 tools/test-window-frames.py # corners, edge and shadow, measured against the pixels
 /usr/bin/python3 tools/test-gtk-window-style.py # the GTK title bar block: written, parsed, taken back
 /usr/bin/python3 tools/test-window-mica.py # Mica: over a white window, for dialogs, not for non-GTK windows
@@ -509,6 +515,7 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/snapGeometry.js` | Snap layouts as numbers: the layouts, their zones, the tiles, the places at the screen's edges and snap assist's grid. Unit-tested. |
 | `lib/snapLayouts.js` | Snap layouts: Win+Z, the bar and the edges while dragging a window, and snap assist. |
 | `lib/snapPreview.js` | Where a dragged window is about to go, as Windows previews it. |
+| `lib/captionButtons.js` | Where a window's own title bar has its Maximise button, by toolkit, as measured. |
 | `lib/jumpList.js` | The right-click menu. |
 | `lib/shellButtons.js` | Start, Search, Task View, clock, show-desktop. |
 | `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |

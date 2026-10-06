@@ -25,7 +25,10 @@ spec.loader.exec_module(ctx)
 SUPER, ESCAPE, Z = 0xffeb, 0xff1b, 0x7a
 ASSISTANT = 'tiling-assistant@ubuntu.com'
 ONE, TWO = 0x31, 0x32
-FIRST, SECOND = 'Snap one', 'Snap two'
+FIRST, SECOND, THIRD = 'Snap one', 'Snap two', 'Snap three'
+SCHEMA = 'org.gnome.shell.extensions.win11-taskbar'
+# lib/captionButtons.js：开着 Windows 标题栏的 GTK 4 窗口，最大化按钮在右上角往左 44px 处、48 宽、46 高。
+GTK4_MAXIMISE = {'right': 44, 'width': 48, 'top': 0, 'height': 46}
 
 
 def main():
@@ -298,6 +301,49 @@ def main():
         gsettings('set', 'org.gnome.shell.extensions.win11-taskbar', 'snap-layouts', 'true')
         check('再打开：它又关上', lambda: not edge_tiling() and snap() and snap()['edges'], timeout=10)
 
+        # 指针停在最大化按钮上（Windows 实测 900ms）：布局在按钮正下方展开，离开 200ms 后收起。
+        gsettings('set', SCHEMA, 'gtk-window-style', 'true')
+        open_window(THIRD)
+        focus(THIRD)
+        f = frame(THIRD)
+        m = GTK4_MAXIMISE
+        button = [f[0] + f[2] - m['right'] - m['width'], f[1] + m['top'], m['width'], m['height']]
+        on_button = [button[0] + button[2] // 2, button[1] + 20]
+        # 先在窗口里动一动：第一次经过时才认出它是 GTK 4。
+        shell.pointer([{'move': [f[0] + f[2] // 2, f[1] + f[3] // 2]}, {'wait': 300},
+                       {'move': [f[0] + f[2] // 2 + 20, f[1] + 20]}, {'wait': 400}, {'move': on_button}, {'wait': 300}])
+        check('停在最大化按钮上：开始计时，还没展开', lambda: snap()['resting'] == THIRD and
+              snap()['underMaximise'] is None, timeout=0.5)
+        check('约 0.9 秒后展开：两行三列的布局格', lambda: snap()['underMaximise'] and
+              len(snap()['underMaximise']['tiles']) == 6, timeout=3)
+        under = snap()['underMaximise']
+        assert under['window'] == THIRD and under['button'] == button, (under['button'], button)
+        assert abs(under['x'] + under['w'] / 2 - (button[0] + button[2] / 2)) <= 1 or under['x'] + under['w'] == x0 + w0 - 8, under
+        assert under['y'] == button[1] + button[3], (under['y'], button)
+        count += 1
+        print('ok 布局在按钮正下方居中，顶边贴着按钮底边', flush=True)
+        zone = under['tiles'][0]['zones'][0]
+        shell.pointer([{'move': [on_button[0], under['y'] + 6]}, {'wait': 100}, {'move': centre(zone)}, {'wait': 400}])
+        check('移进布局：仍然展开，指针下的区块亮起', lambda: snap()['underMaximise'] and
+              snap()['underMaximise']['tiles'][0]['zones'][0]['active'])
+        shell.pointer([{'press': 1}, {'wait': 80}, {'release': 1}, {'wait': 400}])
+        check('点左半块：窗口进左半边，布局收起，贴靠辅助接着填右半边', lambda: frame(THIRD) == [x0, y0, half, h0]
+              and snap()['underMaximise'] is None and snap()['assist'] and snap()['assist']['zone'] == 1)
+        tap(ESCAPE)
+        check('Esc 收起贴靠辅助', lambda: snap()['assist'] is None)
+        f = frame(THIRD)
+        button = [f[0] + f[2] - m['right'] - m['width'], f[1] + m['top'], m['width'], m['height']]
+        on_button = [button[0] + button[2] // 2, button[1] + 20]
+        shell.pointer([{'move': [f[0] + f[2] // 2, f[1] + f[3] // 2]}, {'wait': 200}, {'move': on_button}, {'wait': 1300}])
+        check('再停在最大化按钮上：又展开', lambda: snap()['underMaximise'] is not None, timeout=3)
+        shell.pointer([{'move': [f[0] + f[2] // 2, f[1] + f[3] // 2]}, {'wait': 60}])
+        check('移开：0.2 秒后收起', lambda: snap()['underMaximise'] is None, timeout=1)
+        on_minimise = [button[0] - 23, button[1] + 20]
+        shell.pointer([{'move': on_minimise}, {'wait': 1400}])
+        check('停在最小化按钮上：什么也不展开', lambda: snap()['underMaximise'] is None and snap()['resting'] is None)
+        shell.pointer([{'move': [x0 + w0 // 2, y0 + h0 // 2]}, {'wait': 200}])
+        gsettings('reset', SCHEMA, 'gtk-window-style')
+
         # Ubuntu 的 Tiling Assistant 打开时边缘交给它，关掉后收回来。
         if Path('/usr/share/gnome-shell/extensions', ASSISTANT).exists():
             assistant_on(True)
@@ -316,7 +362,8 @@ def main():
         for key, value in lists.items():
             gsettings('set', 'org.gnome.shell', key, value)
         gsettings('reset', 'org.gnome.shell.extensions.win11-taskbar', 'snap-layouts')
-        for title in (FIRST, SECOND):
+        gsettings('reset', SCHEMA, 'gtk-window-style')
+        for title in (FIRST, SECOND, THIRD):
             shell.trigger('window-close:' + title)
         time.sleep(0.5)
         for process in processes:

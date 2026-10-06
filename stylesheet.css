@@ -2114,19 +2114,30 @@
    edge, 98x64 tiles, zones #d8d8d8 with a darker 1px edge and 4px corners,
    numbered when the keyboard opened it. Hover was not measurable; the
    accent fill is Windows' accent. */
+/* The panel carries only the shadow, round its corners; its surface — the
+   tint, the grain, the edge — is a layer inside it. With the grain on the
+   panel itself St drew the shadow unblurred, a hard grey box round it. */
 .w11-snap-panel {
-    background: rgba(243, 243, 243, 0.96) url("assets/acrylic-noise.png");
-    background-repeat: repeat;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: none;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10);
 }
 
 .w11-snap-panel.dark {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.26);
+}
+
+.w11-snap-surface {
+    background: rgba(243, 243, 243, 0.96) url("assets/acrylic-noise.png");
+    background-repeat: repeat;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+}
+
+.w11-snap-panel.dark .w11-snap-surface {
     background: rgba(44, 44, 44, 0.96) url("assets/acrylic-noise.png");
     background-repeat: repeat;
     border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.26);
 }
 
 /* The keyboard's ring round the chosen layout: a ring only, so the tile
