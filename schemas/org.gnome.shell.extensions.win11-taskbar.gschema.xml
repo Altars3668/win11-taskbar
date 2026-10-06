@@ -363,6 +363,25 @@
       with the top bar hidden these have to live here.</description>
     </key>
 
+    <key name="gtk-window-style" type="b">
+      <default>false</default>
+      <summary>Windows 11 title bars for GTK apps</summary>
+      <description>Writes a marked block into ~/.config/gtk-3.0/gtk.css and ~/.config/gtk-4.0/gtk.css: Windows' caption buttons and 8px corners for every GTK app, and Minimise and Maximise in GNOME's button layout. Turning it off, or turning the extension off, takes them away again.</description>
+    </key>
+    <key name="gtk-mica" type="b">
+      <default>false</default>
+      <summary>Mica behind GTK windows</summary>
+      <description>With the Windows title bars on: the wallpaper, blurred and washed with the theme's colour, shows through a GTK window's title bar and background, as Windows 11's Mica does; windows that are not active show the plain colour.</description>
+    </key>
+    <key name="gtk-window-style-layout" type="s">
+      <default>''</default>
+      <summary>GNOME's button layout before the GTK title bars changed it</summary>
+    </key>
+    <key name="window-frames" type="b">
+      <default>true</default>
+      <summary>Windows-style window corners and shadow</summary>
+      <description>Windows that draw no shadow of their own — Electron, Chromium with its own title bar, Qt, undecorated windows — get Windows 11's 8px corners, its 1px edge and its shadow. GTK windows draw their own and are left alone.</description>
+    </key>
     <key name="window-animations" type="b">
       <default>true</default>
       <summary>Windows-style window animations</summary>

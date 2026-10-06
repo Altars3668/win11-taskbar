@@ -242,6 +242,22 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('Show flashing on taskbar apps'),
             _('An app that needs attention flashes its button instead of '
               + 'showing GNOME’s “is ready” notification.')));
+        group.add(this._switch(settings, 'gtk-window-style',
+            _('Windows title bars for GTK apps'),
+            _('Caption buttons and corners as on Windows, with Minimise and '
+              + 'Maximise. Adds a marked block to ~/.config/gtk-3.0/gtk.css and '
+              + 'gtk-4.0/gtk.css; turning it off removes it. Apps pick it up when '
+              + 'they next start.')));
+        const mica = this._switch(settings, 'gtk-mica',
+            _('Mica behind GTK windows'),
+            _('The wallpaper, blurred and tinted, shows through the title bar '
+              + 'and background of the active GTK window.'));
+        settings.bind('gtk-window-style', mica, 'sensitive', Gio.SettingsBindFlags.GET);
+        group.add(mica);
+        group.add(this._switch(settings, 'window-frames',
+            _('Windows-style window corners and shadow'),
+            _('For windows that draw none of their own, such as Electron and '
+              + 'Qt apps. GTK windows keep theirs.')));
         group.add(this._switch(settings, 'window-animations',
             _('Windows-style window animations'),
             _('Windows grow out of their centre as they open and shrink into '

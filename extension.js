@@ -21,7 +21,10 @@ import {unwatchShellShutdown, watchShellShutdown} from './lib/shellShutdown.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
 import {SnapLayouts} from './lib/snapLayouts.js';
+import {GtkWindowStyle} from './lib/gtkWindowStyle.js';
 import {WindowAnimations} from './lib/windowAnimations.js';
+import {WindowFrames} from './lib/windowFrames.js';
+import {WindowMica} from './lib/windowMica.js';
 import {WindowMotion} from './lib/windowMotion.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
 import {setGettext as setEditorGettext} from './lib/quickSettingsEditor.js';
@@ -59,6 +62,10 @@ export default class Win11TaskbarExtension extends Extension {
                 () => this._syncShellMenus()),
             this._settings.connect('changed::window-animations',
                 () => this._syncWindowAnimations()),
+            this._settings.connect('changed::window-frames',
+                () => this._syncWindowFrames()),
+            ...['gtk-window-style', 'gtk-mica'].map(key =>
+                this._settings.connect(`changed::${key}`, () => this._syncMica())),
             // Win+Z is bound with the taskbar's other keys, so they are
             // bound afresh.
             this._settings.connect('changed::snap-layouts', () => {
@@ -75,6 +82,9 @@ export default class Win11TaskbarExtension extends Extension {
         // when they are made, and should get the one lib/shellMenus.js wraps.
         this._syncShellMenus();
         this._syncWindowAnimations();
+        this._syncWindowFrames();
+        this._gtkWindowStyle = new GtkWindowStyle(this._settings, this.path);
+        this._syncMica();
         this._syncSnapLayouts();
         this._windowMotion = new WindowMotion();
         this._notificationPersistence = new NotificationPersistence();
@@ -113,6 +123,12 @@ export default class Win11TaskbarExtension extends Extension {
         this._windowAnimations = null;
         this._snapLayouts?.destroy();
         this._snapLayouts = null;
+        this._windowFrames?.destroy();
+        this._windowFrames = null;
+        this._gtkWindowStyle?.destroy();
+        this._gtkWindowStyle = null;
+        this._windowMica?.destroy();
+        this._windowMica = null;
         this._notificationPersistence?.destroy();
         this._notificationPersistence = null;
         this._attentionToasts?.destroy();
@@ -164,6 +180,30 @@ export default class Win11TaskbarExtension extends Extension {
         } else if (!wanted && this._windowAnimations) {
             this._windowAnimations.destroy();
             this._windowAnimations = null;
+        }
+    }
+
+    /** Windows' corners, edge and shadow, for windows that draw none. */
+    _syncWindowFrames() {
+        const wanted = this._settings.get_boolean('window-frames');
+        if (wanted && !this._windowFrames) {
+            this._windowFrames = new WindowFrames();
+        } else if (!wanted && this._windowFrames) {
+            this._windowFrames.destroy();
+            this._windowFrames = null;
+        }
+    }
+
+    /** Mica behind GTK windows: it shows through what the GTK style sheet
+     *  clears, so it needs those title bars on too. */
+    _syncMica() {
+        const wanted = this._settings.get_boolean('gtk-mica') &&
+            this._settings.get_boolean('gtk-window-style');
+        if (wanted && !this._windowMica) {
+            this._windowMica = new WindowMica();
+        } else if (!wanted && this._windowMica) {
+            this._windowMica.destroy();
+            this._windowMica = null;
         }
     }
 

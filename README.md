@@ -130,6 +130,49 @@ completes the effects; only their start, end, length and curve change. A
 window launched from the taskbar still comes out of its button. A setting
 puts GNOME's own animations back.
 
+**Window corners and shadow.** Windows that draw no shadow of their own —
+Electron and Chromium with their own title bars, Qt, undecorated windows —
+get Windows 11's 8px corners, its edge (the outermost pixel, a translucent
+grey over whatever is behind) and its shadow, all measured on a Settings
+window: light at the sides and top, darker and longer below. The corners
+and edge are a shader on the window; the shadow is the measured profile
+drawn into an image (`tools/make-window-shadow.py`) and stretched round the
+window by its nine slices, below it. GTK windows draw their own corners and
+shadow and are left alone; maximised, tiled and full-screen windows keep
+square corners and no shadow, as on Windows.
+
+**Title bars of GTK apps.** GTK apps draw their own title bars, so on
+request (off by default, as it writes outside the extension) a marked block
+goes into `~/.config/gtk-3.0/gtk.css` and `~/.config/gtk-4.0/gtk.css`:
+Windows' caption buttons — 46px wide, flush with the window's corner, a
+faint grey under the pointer and #C42B1C under it on Close, with Windows'
+thin 10px glyphs — and 8px corners; GNOME's button layout gains Minimise
+and Maximise. Anything else in those files is left alone. Turning it off, or
+turning the extension off in a session, takes it all back out and restores
+the button layout; locking the screen, which also turns extensions off,
+touches nothing. Apps pick it up when they next start. GTK 3 draws the
+glyphs a little bolder than GTK 4 does.
+
+**Mica.** With those title bars on, a second setting (off by default too)
+gives GTK apps Windows 11's Mica. As Windows makes it, the desktop
+wallpaper, blurred far past recognition, takes the luminosity of the
+theme's tint — #F3F3F3 in the light style, #202020 in the dark — keeping
+only its hue, so a window is as light or as dark as its theme on any
+wallpaper, just faintly of the wallpaper's tone; the window's own colour
+goes over that at half strength in the light style and 0.8 in the dark.
+The shell draws the first part below the window, GTK the second — light or
+dark as each app itself is, and solid while the window is not the active
+one, as Windows shows it. What shows through is always the wallpaper,
+never the windows behind. The style sheet makes the background of every
+window GTK 3 or 4 draws see-through, so every one of them gets Mica below
+it: an app's dialogs as well, and the windows of apps that are no
+GtkApplication, such as Firefox, known by the GTK library their process has
+loaded. GTK 3's style sheets cannot tell a dark theme, so GTK 3 apps always
+get the light strength. Lists, text and sidebars stay opaque on top, as in
+many Windows apps. The taskbar's thumbnails and snap assist show a window
+with its Mica, as Windows does; GNOME's own overview shows it without.
+Apps pick it up when they next start.
+
 **Snap layouts.** Win+Z opens Windows 11's snap layouts at the focused
 window's top right, below its title bar: six layouts in 98×64 tiles, numbered
 — a number picks a layout, the next a zone — or a click on a zone. Dragging a
@@ -368,6 +411,7 @@ The test shell can be varied through the environment of `start` (and of
 ```bash
 TESTBED_MODE=ubuntu tools/test-ui.sh            # Ubuntu's session mode and Yaru, as on the desktop
 TESTBED_MONITOR=3840x2160 TESTBED_SCALE=2 tools/testbed.sh start  # a HiDPI screen
+TESTBED_MONITOR=3840x2160 TESTBED_SCALE=2 TESTBED_LOGICAL=1 tools/testbed.sh start  # the same, laid out in logical pixels, as Ubuntu does
 TESTBED_ANIMATIONS=1 tools/testbed.sh start     # force animations where mutter renders in software
 ```
 
@@ -404,6 +448,9 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-edges.py      # the bar on each edge, at 64 and 32px, and what opens from it
 /usr/bin/python3 tools/test-window-animations.py # open, minimise, restore, close a window of its own
 /usr/bin/python3 tools/test-snap-layouts.py # Win+Z by keys and pointer, snap assist, dragging to the top
+/usr/bin/python3 tools/test-window-frames.py # corners, edge and shadow, measured against the pixels
+/usr/bin/python3 tools/test-gtk-window-style.py # the GTK title bar block: written, parsed, taken back
+/usr/bin/python3 tools/test-window-mica.py # Mica: over a white window, for dialogs, not for non-GTK windows
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
 node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
@@ -420,6 +467,10 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/taskList.js` | The strip, kept in sync with pinned and running apps. |
 | `lib/windowPreview.js` | The thumbnail flyout and Aero Peek. |
 | `lib/windowAnimations.js` | Windows 11's window open, close, minimise and restore animations, over GNOME's. |
+| `lib/gtkWindowStyle.js` | Windows' title bar buttons and corners for GTK apps, through their user style sheets. |
+| `lib/windowMica.js` | Windows 11's Mica below GTK windows: the wallpaper, blurred and tinted. |
+| `lib/windowFrames.js` | Windows 11's window corners, edge and shadow, for windows that draw none. |
+| `tools/make-window-shadow.py` | Draws `assets/window-shadow.png` from the measured shadow profile. |
 | `lib/snapGeometry.js` | Snap layouts as numbers: the layouts, their zones, the tiles and snap assist's grid. Unit-tested. |
 | `lib/snapLayouts.js` | Snap layouts: Win+Z, the bar while dragging a window to the top, and snap assist. |
 | `lib/jumpList.js` | The right-click menu. |

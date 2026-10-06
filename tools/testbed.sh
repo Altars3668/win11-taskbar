@@ -19,7 +19,11 @@
 #
 # TESTBED_MONITOR=3840x2160 TESTBED_SCALE=2 gives the virtual monitor another
 # size and a whole-number scale, as on a HiDPI desktop; the defaults are
-# 1920x1080 and the scale mutter picks for it.
+# 1920x1080 and the scale mutter picks for it. TESTBED_LOGICAL=1 lays the
+# monitors out in logical pixels, as GNOME does with its
+# scale-monitor-framebuffer feature on (Ubuntu's default): the stage is then
+# half the monitor's pixels at scale 2, and what is drawn offscreen is drawn
+# at the monitor's own pixels.
 #
 # TESTBED_ANIMATIONS=1 forces animations on. GNOME switches them off when
 # mutter cannot render on the GPU, which a headless shell may not.
@@ -146,6 +150,8 @@ do_start() {
         preload="export TESTBED_CLUTTER=\"$TESTBED_LD_LIBRARY_PATH/libmutter-clutter-18.so.0\" LD_PRELOAD=\"$RUN/testbed-dlopen.so\""
     fi
 
+    local features='[]'
+    [ -n "${TESTBED_LOGICAL:-}" ] && features="['scale-monitor-framebuffer']"
     cat > "$RUN/inner.sh" <<INNER
 #!/bin/bash
 printf '%s' "\$DBUS_SESSION_BUS_ADDRESS" > "$RUN/bus"
@@ -154,6 +160,7 @@ gsettings set org.gnome.shell disable-user-extensions false
 gsettings set org.gnome.shell disabled-extensions "$disabled"
 gsettings set org.gnome.shell enabled-extensions "['$UUID']"
 gsettings set org.gnome.desktop.interface scaling-factor ${TESTBED_SCALE:-0}
+gsettings set org.gnome.mutter experimental-features "$features"
 gsettings --schemadir "$ROOT/schemas" set \
     org.gnome.shell.extensions.win11-taskbar debug-service true
 ${TESTBED_LD_LIBRARY_PATH:+export LD_LIBRARY_PATH="$TESTBED_LD_LIBRARY_PATH"}

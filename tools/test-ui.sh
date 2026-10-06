@@ -34,6 +34,9 @@ gjs -m "$ROOT/tools/test-application-order.js"
 /usr/bin/python3 "$ROOT/tools/test-wifi-flow.py"
 /usr/bin/python3 "$ROOT/tools/test-window-animations.py"
 /usr/bin/python3 "$ROOT/tools/test-snap-layouts.py"
+/usr/bin/python3 "$ROOT/tools/test-window-frames.py"
+/usr/bin/python3 "$ROOT/tools/test-gtk-window-style.py"
+/usr/bin/python3 "$ROOT/tools/test-window-mica.py"
 # 换边会重建任务栏；放在最后，结束时复位到底边。
 /usr/bin/python3 "$ROOT/tools/test-edges.py"
 

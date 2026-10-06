@@ -7,7 +7,8 @@
  *   gjs -m tools/fake-tray-item.js [id] [icon-name] [--late] [--theme-path]
  *
  * Runs until killed. Also exports a DBusMenu with a couple of entries, so
- * the right-click path gets exercised too.
+ * the right-click path gets exercised too. Like real apps, it registers again
+ * whenever the watcher comes back — when the extension is turned off and on.
  *
  * --theme-path does what Chromium and Edge do: the icon is a PNG in a
  * private directory named by IconThemePath, the title is empty and only the
@@ -174,18 +175,23 @@ Gio.bus_own_name(Gio.BusType.SESSION, busName, Gio.BusNameOwnerFlags.NONE,
         }
     },
     (connection, name) => {
-        connection.call('org.kde.StatusNotifierWatcher', '/StatusNotifierWatcher',
-            'org.kde.StatusNotifierWatcher', 'RegisterStatusNotifierItem',
-            new GLib.Variant('(s)', [name]), null,
-            Gio.DBusCallFlags.NONE, -1, null,
-            (conn, res) => {
-                try {
-                    conn.call_finish(res);
-                    print(`registered ${name}`);
-                } catch (e) {
-                    printerr(`could not register: ${e.message}`);
-                }
-            });
+        // Whenever a watcher appears — now, and again after the extension
+        // is turned off and on — as libappindicator and Qt do.
+        Gio.bus_watch_name_on_connection(connection, 'org.kde.StatusNotifierWatcher',
+            Gio.BusNameWatcherFlags.NONE, () => {
+                connection.call('org.kde.StatusNotifierWatcher', '/StatusNotifierWatcher',
+                    'org.kde.StatusNotifierWatcher', 'RegisterStatusNotifierItem',
+                    new GLib.Variant('(s)', [name]), null,
+                    Gio.DBusCallFlags.NONE, -1, null,
+                    (conn, res) => {
+                        try {
+                            conn.call_finish(res);
+                            print(`registered ${name}`);
+                        } catch (e) {
+                            printerr(`could not register: ${e.message}`);
+                        }
+                    });
+            }, null);
     },
     () => printerr(`lost the bus name ${busName}`));
 
