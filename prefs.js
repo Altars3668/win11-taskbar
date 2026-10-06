@@ -101,6 +101,12 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         const parts = new Adw.PreferencesGroup({title: _('Elements')});
         page.add(parts);
         parts.add(this._switch(settings, 'show-start-button', _('Start button')));
+        parts.add(this._combo(settings, 'search-style', _('Search'), [
+            ['hidden', _('Hide')],
+            ['icon', _('Search icon only')],
+            ['icon-label', _('Search icon and label')],
+            ['box', _('Search box')],
+        ]));
         parts.add(this._switch(settings, 'show-task-view-button', _('Task View button')));
         parts.add(this._switch(settings, 'show-pinned', _('Pinned apps')));
         parts.add(this._switch(settings, 'show-clock', _('Clock')));

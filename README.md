@@ -80,7 +80,11 @@ pulled back out, as on Windows.
 
 GNOME's own Quick Settings — network, volume, battery — is moved into the
 tray rather than reimplemented, because hiding the top bar would otherwise
-take the volume slider with it. It is put back untouched on disable.
+take the volume slider with it. It is put back untouched on disable. Each
+of its glyphs lights up on its own under the pointer, as separate buttons
+do (Windows 11 lights the group as one); a click on any of them opens quick
+settings, as there. Where there is no battery GNOME puts a power-off glyph
+in its place; Windows shows nothing there, and neither does the bar.
 
 **Start menu.** A floating panel above the Start button with a search box,
 the pinned grid, recent documents under "Recommended", and a footer with
@@ -92,6 +96,17 @@ programs, then every app under a letter heading. The Super key opens it
 instead of the Overview. Right-clicking a tile pins or unpins it.
 The account avatar opens account information, lock, sign-out and the system's
 available user-switching actions. Escape and a click outside dismiss Start.
+
+**Search.** Between Start and Task View, in the four styles Windows'
+taskbar settings offer, measured on the reference machine: hidden; the
+magnifier alone in a 44 x 48 cell; the magnifier and "Search" in a 98 x 32
+pill; or the search box, a 216 x 32 pill with the magnifier and the
+placeholder at its start — the default, as on Windows. The pills take
+Fluent's control fill and stroke and brighten under the pointer; the
+picture of the day Windows puts at the box's far end is left out. A click
+opens Start with its search box ready for the keys, or GNOME's search when
+the extension's Start menu is off. A bar standing on a side has room only
+for the magnifier.
 
 默认使用 640×720 的六列紧凑布局；设置中可选历史实测的 832×864 Insider 八列布局，或自定义宽高：每 96px 宽多一列固定项，每 84px 高多一行。
 两种布局均限制在显示器可用区域内。Insider 布局距任务栏 13px，固定项间距为 96×84，图标为 32px。 Note that is the
@@ -132,16 +147,19 @@ completes the effects; only their start, end, length and curve change. A
 window launched from the taskbar still comes out of its button. A setting
 puts GNOME's own animations back.
 
-**Window corners and shadow.** Windows that draw no shadow of their own —
-Electron and Chromium with their own title bars, Qt, undecorated windows —
-get Windows 11's 8px corners, its edge (the outermost pixel, a translucent
-grey over whatever is behind) and its shadow, all measured on a Settings
-window: light at the sides and top, darker and longer below. The corners
-and edge are a shader on the window; the shadow is the measured profile
-drawn into an image (`tools/make-window-shadow.py`) and stretched round the
-window by its nine slices, below it. GTK windows draw their own corners and
-shadow and are left alone; maximised, tiled and full-screen windows keep
-square corners and no shadow, as on Windows.
+**Window corners and shadow.** Every window gets Windows 11's 8px corners,
+its edge (the outermost pixel, a translucent grey over whatever is behind)
+and its shadow, all measured on a Settings window: light at the sides and
+top, darker and longer below. A window that draws a shadow of its own —
+GTK's, Chromium's and Electron's with their own title bars — loses it, and
+so does the one mutter draws inside an undecorated X11 window such as
+WeChat's: whatever a window draws outside its frame is dropped. The corners
+and edge are a shader on the window, placed by the window's paint box the
+way Clutter places the texture the shader runs on; the shadow is the
+measured profile drawn into an image (`tools/make-window-shadow.py`) and
+stretched round the frame by its nine slices, below the window. Maximised,
+tiled and full-screen windows keep square corners and no shadow, as on
+Windows.
 
 **Title bars of GTK apps.** GTK apps draw their own title bars, so on
 request (off by default, as it writes outside the extension) a marked block
@@ -447,6 +465,7 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-tray-overflow.py # a blinking tray icon, and the overflow's light dismiss
 /usr/bin/python3 tools/test-attention.py  # a window asking for attention flashes its button
 /usr/bin/python3 tools/test-input-switch.py # Win+Space: the list, Space onward, release to choose
+/usr/bin/python3 tools/test-search.py     # Search in its four styles, under the pointer, and what a click opens
 /usr/bin/python3 tools/test-edges.py      # the bar on each edge, at 64 and 32px, and what opens from it
 /usr/bin/python3 tools/test-window-animations.py # open, minimise, restore, close a window of its own
 /usr/bin/python3 tools/test-snap-layouts.py # Win+Z by keys and pointer, snap assist, dragging to the top
@@ -476,7 +495,7 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/snapGeometry.js` | Snap layouts as numbers: the layouts, their zones, the tiles and snap assist's grid. Unit-tested. |
 | `lib/snapLayouts.js` | Snap layouts: Win+Z, the bar while dragging a window to the top, and snap assist. |
 | `lib/jumpList.js` | The right-click menu. |
-| `lib/shellButtons.js` | Start, Task View, clock, show-desktop. |
+| `lib/shellButtons.js` | Start, Search, Task View, clock, show-desktop. |
 | `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |
 | `lib/systemFlyouts.js` | Quick settings and the notification centre. |
 | `lib/quickSettingsEditor.js` | Editing quick settings in place: Unpin, drag to reorder, Add, Done. |

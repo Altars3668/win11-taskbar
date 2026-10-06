@@ -37,6 +37,8 @@ gjs -m "$ROOT/tools/test-application-order.js"
 /usr/bin/python3 "$ROOT/tools/test-window-frames.py"
 /usr/bin/python3 "$ROOT/tools/test-gtk-window-style.py"
 /usr/bin/python3 "$ROOT/tools/test-window-mica.py"
+# 搜索的最后一步把任务栏换到左边，同样会重建任务栏，所以紧挨着换边测试。
+/usr/bin/python3 "$ROOT/tools/test-search.py"
 # 换边会重建任务栏；放在最后，结束时复位到底边。
 /usr/bin/python3 "$ROOT/tools/test-edges.py"
 

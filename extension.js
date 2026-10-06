@@ -19,6 +19,7 @@ import {Taskbar} from './lib/panel.js';
 import {ShellMenus} from './lib/shellMenus.js';
 import {unwatchShellShutdown, watchShellShutdown} from './lib/shellShutdown.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
+import {setGettext as setButtonsGettext} from './lib/shellButtons.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
 import {SnapLayouts} from './lib/snapLayouts.js';
 import {GtkWindowStyle} from './lib/gtkWindowStyle.js';
@@ -43,6 +44,7 @@ export default class Win11TaskbarExtension extends Extension {
         setLinksGettext(_);
         setClipGettext(_);
         setNotificationGettext(_);
+        setButtonsGettext(_);
 
         this._settings = this.getSettings();
         setExtensionSettings(this._settings);

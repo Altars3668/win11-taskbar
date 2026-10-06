@@ -25,6 +25,13 @@
     <value value="4" nick="custom"/>
   </enum>
 
+  <enum id="org.gnome.shell.extensions.win11-taskbar.search-style">
+    <value value="0" nick="hidden"/>
+    <value value="1" nick="icon"/>
+    <value value="2" nick="icon-label"/>
+    <value value="3" nick="box"/>
+  </enum>
+
   <enum id="org.gnome.shell.extensions.win11-taskbar.tray-hover">
     <value value="0" nick="tooltip"/>
     <value value="1" nick="menu"/>
@@ -99,6 +106,12 @@
     <key name="show-start-button" type="b">
       <default>true</default>
       <summary>Show the Start button</summary>
+    </key>
+
+    <key name="search-style" enum="org.gnome.shell.extensions.win11-taskbar.search-style">
+      <default>'box'</default>
+      <summary>Search on the taskbar</summary>
+      <description>As Windows offers it: hidden, the search icon only, the icon and its label, or a search box. A bar standing on a side shows only the icon. It opens Start with its search box ready.</description>
     </key>
 
     <key name="show-task-view-button" type="b">

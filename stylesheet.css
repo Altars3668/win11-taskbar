@@ -268,6 +268,64 @@
     background-color: rgba(255, 255, 255, 0.08);
 }
 
+/* Search (SEARCH in lib/spec.js). With its label, and as a box, the pill
+   is the control: the button around it draws nothing of its own. The
+   pill is Fluent's control fill and stroke, its ends round. */
+.w11-search-icon-label,
+.w11-search-icon-label:hover,
+.w11-search-box,
+.w11-search-box:hover,
+.dark .w11-search-icon-label:hover,
+.dark .w11-search-box:hover {
+    background: none;
+}
+
+.w11-search-icon-label .w11-search-pill,
+.w11-search-box .w11-search-pill {
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+}
+
+.w11-search-icon-label:hover .w11-search-pill,
+.w11-search-box:hover .w11-search-pill {
+    background-color: rgba(255, 255, 255, 0.86);
+}
+
+.dark .w11-search-icon-label .w11-search-pill,
+.dark .w11-search-box .w11-search-pill {
+    background-color: rgba(255, 255, 255, 0.0605);
+    border: 1px solid rgba(255, 255, 255, 0.0698);
+}
+
+.dark .w11-search-icon-label:hover .w11-search-pill,
+.dark .w11-search-box:hover .w11-search-pill {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+.w11-search-content {
+    spacing: 2px;
+}
+
+/* In the box the glyph sits 11px in and the placeholder 37px in. */
+.w11-search-box .w11-search-content {
+    padding-left: 8px;
+    spacing: 10px;
+}
+
+.w11-search-label {
+    font-size: 13px;
+}
+
+.w11-search-box .w11-search-label {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6063);
+}
+
+.dark .w11-search-box .w11-search-label {
+    color: rgba(255, 255, 255, 0.786);
+}
+
 /* Measured: the clock is a 62px cell with two stacked lines. */
 .w11-clock {
     padding: 0 8px;
@@ -583,13 +641,20 @@
     spacing: 0;
 }
 
-/* 控制区内的 24px 图标单元之间也留出实测的 4px；共享一个悬停区域。 */
+/* 控制区内的 24px 图标单元之间也留出实测的 4px。每个图标单独悬停高亮（40px 高、
+   上下各留 4px）；快捷设置开着时整组保持按下的样子，因为点哪个都打开同一个面板。 */
 .w11-system-indicator .panel-button > .panel-status-indicators-box { spacing: 4px; }
 .w11-system-indicator .panel-button { border-radius: 4px; transition-duration: 0ms; }
-.w11-system-indicator .panel-button:hover,
+.w11-system-indicator .panel-button:hover { background: none; }
 .w11-system-indicator .panel-button:active { background-color: rgba(0, 0, 0, 0.06); }
-.dark .w11-system-indicator .panel-button:hover,
 .dark .w11-system-indicator .panel-button:active { background-color: rgba(255, 255, 255, 0.08); }
+.w11-system-indicator .w11-system-glyph {
+    min-height: 40px;
+    border-radius: 4px;
+}
+.w11-system-indicator .w11-system-glyph:hover { background-color: rgba(0, 0, 0, 0.06); }
+.dark .w11-system-indicator .w11-system-glyph:hover { background-color: rgba(255, 255, 255, 0.08); }
+.w11-system-indicator .panel-button:active .w11-system-glyph:hover { background: none; }
 
 /* ------------------------------------------------------- system flyouts */
 
