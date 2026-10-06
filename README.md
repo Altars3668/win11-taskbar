@@ -375,6 +375,7 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/panel.js` | The surface, the three zones, struts, theming. |
 | `lib/autoHide.js` | Sliding out of the way behind a pressure barrier. |
 | `lib/shellMenus.js` | GNOME Shell's own right-click menus, switched to open on release. |
+| `lib/shellShutdown.js` | Knowing the shell is exiting, so teardown leaves GNOME's objects alone. |
 | `lib/debugService.js` | Geometry for the tests, a trigger for UI that needs a click, a virtual pointer. Off by default. |
 | `patches/` | GTK 3, GTK 4 and mutter patches for the Windows context-menu model, and why. |
 | `tools/test-context-menu.py`, `tools/ctxprobe/` | End-to-end test of the GTK menu model with real pointer events. |

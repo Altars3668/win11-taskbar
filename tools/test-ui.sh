@@ -36,7 +36,7 @@ check_log() {
 import re, sys
 from pathlib import Path
 text = Path(sys.argv[1]).read_text()
-errors = re.findall(r'^.*(?:JS ERROR|Exception in callback|GNOME Shell-CRITICAL|Clutter-CRITICAL).*$', text, re.M)
+errors = re.findall(r'^.*(?:JS ERROR|Exception in callback|GNOME Shell-CRITICAL|Clutter-CRITICAL|St-CRITICAL|Gjs-CRITICAL).*$', text, re.M)
 if errors:
     raise SystemExit('\n'.join(errors))
 print('日志检查：没有 JavaScript 异常')
@@ -46,4 +46,18 @@ check_log
 # 包括停用还原和模拟会话结束后的再还原，此脚本会重新启动隔离 Shell。
 /usr/bin/python3 "$ROOT/tools/test-shortcuts.py"
 check_log
+# Shell 退出时整个舞台一起销毁：扩展不能再碰已释放的 GNOME 对象，也不能再写设置。
+"$ROOT/tools/testbed.sh" stop >/dev/null
+/usr/bin/python3 - "$RUN/shell.log" <<'PY'
+import re, sys
+from pathlib import Path
+text = Path(sys.argv[1]).read_text()
+start = text.find('Shutting down GNOME Shell')
+if start < 0:
+    raise SystemExit('退出检查：日志里没有 Shell 的关闭记录')
+errors = re.findall(r'^.*(?:CRITICAL|failed to commit changes to dconf|already owns).*$', text[start:], re.M)
+if errors:
+    raise SystemExit('\n'.join(errors))
+print('退出检查：关闭过程没有报错')
+PY
 printf '完整 UI 回归结束，0 项失败\n'

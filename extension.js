@@ -15,6 +15,7 @@ import {setGettext as setMenuGettext} from './lib/dbusMenu.js';
 import {setGettext} from './lib/jumpList.js';
 import {Taskbar} from './lib/panel.js';
 import {ShellMenus} from './lib/shellMenus.js';
+import {unwatchShellShutdown, watchShellShutdown} from './lib/shellShutdown.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
 import {WindowMotion} from './lib/windowMotion.js';
@@ -36,6 +37,7 @@ export default class Win11TaskbarExtension extends Extension {
 
         this._settings = this.getSettings();
         setExtensionSettings(this._settings);
+        watchShellShutdown();
         this._taskbars = [];
         this._topPanelHidden = false;
 
@@ -92,6 +94,7 @@ export default class Win11TaskbarExtension extends Extension {
 
         this._restoreTopPanel();
         cleanupTheme();
+        unwatchShellShutdown();
 
         this._settings = null;
     }

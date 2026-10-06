@@ -58,8 +58,18 @@ do_stop() {
         rm -f "$RUN/app-pids"
     fi
     if [ -s "$RUN/pid" ]; then
-        local pgid
+        local pgid shell
         pgid="$(cat "$RUN/pid")"
+        # The shell goes first, as at logout, while its session bus is still
+        # there; a bus that goes with it cuts its shutdown short.
+        shell="$(pgrep -g "$pgid" -x gnome-shell | head -1)"
+        if [ -n "$shell" ]; then
+            kill -TERM "$shell" 2>/dev/null
+            for _ in $(seq 1 20); do
+                kill -0 "$shell" 2>/dev/null || break
+                sleep 0.5
+            done
+        fi
         kill -TERM -- "-$pgid" 2>/dev/null || kill -TERM "$pgid" 2>/dev/null
         for _ in $(seq 1 10); do
             kill -0 -- "-$pgid" 2>/dev/null || break
