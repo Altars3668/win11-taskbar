@@ -2172,17 +2172,30 @@
     border-radius: 2px;
 }
 
-/* Where the window will go, while it is dragged over a zone. */
+/* Where a dragged window will go (lib/snapPreview.js), at an edge or a
+   zone of the bar alike. Measured over white and dark grey: the blur shows
+   through 0.46 of a light grey, the edge is Windows' surface stroke over
+   the blur, the grain acrylic's noise. The dark theme was not measured:
+   Windows' dark acrylic grey at the same strength, and the stroke Fluent
+   gives both themes. */
 .w11-snap-preview {
-    background-color: rgba(0, 120, 212, 0.18);
-    border: 2px solid rgba(0, 120, 212, 0.55);
+    background: rgba(205, 205, 205, 0.46) url("assets/acrylic-noise.png");
+    background-repeat: repeat;
     border-radius: 8px;
 }
 
-.dark .w11-snap-preview,
-.w11-snap-preview.dark {
-    background-color: rgba(76, 194, 255, 0.18);
-    border: 2px solid rgba(76, 194, 255, 0.55);
+.dark .w11-snap-preview {
+    background: rgba(44, 44, 44, 0.46) url("assets/acrylic-noise.png");
+    background-repeat: repeat;
+}
+
+.w11-snap-preview-edge {
+    border: 1px solid rgba(94, 94, 94, 0.43);
+    border-radius: 8px;
+}
+
+.dark .w11-snap-preview-edge {
+    border-color: rgba(117, 117, 117, 0.4);
 }
 
 /* Snap assist: the other windows, in the zone still to fill. */

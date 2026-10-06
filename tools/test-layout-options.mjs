@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import {startLayout, START_SHORTCUTS} from '../lib/startOptions.js';
 import {besideBar, isVertical, placeAtEnd, placeBeside, sideFacingBar, towardsBar} from '../lib/barEdge.js';
-import {assistGrid, LAYOUTS, layoutsFor, rectAt, tileZones, zoneRect} from '../lib/snapGeometry.js';
+import {assistGrid, edgePlace, LAYOUTS, layoutsFor, panelSize, previewRect, rectAt, tileZones,
+    zoneRect} from '../lib/snapGeometry.js';
 import {TRAY} from '../lib/spec.js';
 
 // 区域是任务栏旁边的空间：1920×1080 的屏幕减去底部 48px 的任务栏。
@@ -106,6 +107,31 @@ for (const y of rows) {
 }
 assert(Math.abs((rows[0] + rows.at(-1) + 195) / 2 - 516) <= 1);
 assert.deepEqual(assistGrid(Array(30).fill(1.5), {x: 0, y: 0, width: 500, height: 300}).filter(Boolean).length, 1);
+// 拖到屏幕边缘（实测）：离左右边 63px 进入半边、64 不进，进入后 138 才离开；
+// 离工作区上下边 138px 以内是那个角的四分之一；离顶 6px 最大化（8 不），20 以内保持；角优先于顶。
+const at = (x, y, previous = null, scale = 1) => edgePlace(x, y, work, scale, previous)?.place ?? null;
+assert.deepEqual([at(63, 400), at(64, 400), at(136, 400, 'left'), at(138, 400, 'left')], ['left', null, 'left', null]);
+assert.deepEqual([at(1856, 400), at(1855, 400), at(1919 - 137, 400, 'right'), at(1919 - 138, 400, 'right')],
+    ['right', null, 'right', null]);
+assert.deepEqual([at(0, 137), at(0, 138), at(0, 893), at(0, 894), at(1919, 0)],
+    ['top-left', 'left', 'left', 'bottom-left', 'top-right']);
+assert.deepEqual([at(100, 400, 'top-left'), at(300, 6), at(300, 8), at(300, 16, 'top'), at(300, 21, 'top')],
+    ['left', 'top', null, 'top', null]);
+assert.deepEqual([at(0, 0), at(126, 0)], ['top-left', 'top']);
+// 2 倍缩放下距离按逻辑像素放大；工作区不从 0 开始时从它的边算起。
+assert.deepEqual([at(127, 400, null, 2), at(128, 400, null, 2)], ['left', null]);
+assert.equal(edgePlace(48 + 63, 400, {x: 48, y: 0, width: 1872, height: 1080})?.place, 'left');
+const quarter = edgePlace(0, 0, work);
+assert.deepEqual([quarter.layout, quarter.index, zoneRect(work, quarter.zone)],
+    ['quarters', 0, {x: 0, y: 0, width: 960, height: 516}]);
+assert.deepEqual([edgePlace(300, 0, work).layout, edgePlace(300, 0, work).zone], [null, [0, 0, 1, 1]]);
+// 预览：离工作区的边各缩 8px，两块相接的中线不缩。
+assert.deepEqual(previewRect(work, rects('halves')[0], 8), {x: 8, y: 8, width: 952, height: 1016});
+assert.deepEqual(previewRect(work, rects('halves')[1], 8), {x: 960, y: 8, width: 952, height: 1016});
+assert.deepEqual(previewRect(work, rects('quarters')[3], 8), {x: 960, y: 516, width: 952, height: 508});
+assert.deepEqual(previewRect(work, work, 8), {x: 8, y: 8, width: 1904, height: 1016});
+// 布局格的面板：浮层三列两行 342×164，布局条一行 672×88。
+assert.deepEqual([panelSize(6, 3), panelSize(6, 6)], [[342, 164], [672, 88]]);
 assert.equal(new Set(START_SHORTCUTS.map(s => s.id)).size, START_SHORTCUTS.length);
 assert(START_SHORTCUTS.some(s => s.id === 'resources' && s.desktop === 'net.nokyan.Resources.desktop'));
 assert.deepEqual([TRAY.trayToSystemGap, TRAY.systemToClockGap, TRAY.clockToDesktopGap], [4, 8, 4]);

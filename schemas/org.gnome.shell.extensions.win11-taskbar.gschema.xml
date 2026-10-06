@@ -218,7 +218,12 @@
     <key name="snap-layouts" type="b">
       <default>true</default>
       <summary>Snap layouts</summary>
-      <description>Windows 11's snap layouts: Win+Z over a window, the bar at the top of the screen while a window is dragged there, and snap assist for the zones left over.</description>
+      <description>Windows 11's snap layouts: Win+Z over a window, the bar at the top of the screen while a window is dragged there, a half or a quarter of the screen for a window dragged to a side or a corner, the whole of it at the top, and snap assist for the zones left over. GNOME's own tiling at the edges is off meanwhile; while Ubuntu's Tiling Assistant is on, the edges are left to it.</description>
+    </key>
+    <key name="snap-restore-edge-tiling" type="b">
+      <default>false</default>
+      <summary>GNOME's edge tiling to switch back on</summary>
+      <description>Set while the snap layouts have switched GNOME's tiling at the screen edges off, so that it is switched back on when they stop.</description>
     </key>
     <key name="app-key-1" type="as">
       <default><![CDATA[['<Super>1']]]></default>

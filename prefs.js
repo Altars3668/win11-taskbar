@@ -286,7 +286,8 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         shortcuts.add(this._switch(settings, 'snap-layouts',
             _('Snap layouts'),
             _('Super+Z over a window, or drag a window against the top of '
-              + 'the screen; snap assist then fills the other zones.')));
+              + 'the screen, a side or a corner; snap assist then fills the '
+              + 'other zones.')));
 
         const keyList = new Adw.PreferencesGroup({title: _('Also bound')});
         page.add(keyList);

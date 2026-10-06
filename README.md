@@ -196,13 +196,27 @@ Apps pick it up when they next start.
 **Snap layouts.** Win+Z opens Windows 11's snap layouts at the focused
 window's top right, below its title bar: six layouts in 98×64 tiles, numbered
 — a number picks a layout, the next a zone — or a click on a zone. Dragging a
-window up against the top of the screen opens them as a bar there instead,
-with the target zone previewed on screen, and letting go over a zone puts the
-window in it. Snap assist then offers the other windows for the zone still
-empty, one zone after another, until they are filled or it is waved away
-with Escape or a click elsewhere. Sizes and placement were measured on
-Windows; the suggested snap groups Windows adds above the layouts are not
-reproduced. A setting turns it all off and gives Super+Z back to GNOME.
+window up against the top of the screen, under its middle, opens them as a
+bar there instead, and letting go over a zone puts the window in it.
+Dragging it against a side puts it in that half, into a corner in that
+quarter, against the rest of the top it is maximised — at the distances
+measured on Windows: 63px from a side, 138px from a corner, 6px from the
+top, and further to leave than to arrive. Wherever it is about to go, the
+same preview shows the place, as Windows shows it: the blurred desktop under
+a light grey, kept 8px off the screen's edges, growing out of the window,
+moving with a moment's delay when the window moves on to another place, and
+shrinking back into it when it goes nowhere. Escape during the drag puts the
+window back, as it does anyway. Snap assist then offers the other windows for
+the zone still empty, one zone after another, until they are filled or it is
+waved away with Escape or a click elsewhere. Sizes and placement were
+measured on Windows; the suggested snap groups Windows adds above the
+layouts are not reproduced. A setting turns it all off and gives Super+Z
+back to GNOME.
+
+GNOME tiles windows dragged to the edges itself; that is switched off while
+the snap layouts are on and switched back on after. Ubuntu's Tiling Assistant
+does the same with tiling of its own, so while it is on the edges are left
+to it — turn it off for the snap layouts to have them.
 
 **Switching input.** Win+Space opens the input flyout with the next input
 method marked; Space moves on, Shift+Space back, and letting go of the
@@ -468,7 +482,7 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-search.py     # Search in its four styles, under the pointer, and what a click opens
 /usr/bin/python3 tools/test-edges.py      # the bar on each edge, at 64 and 32px, and what opens from it
 /usr/bin/python3 tools/test-window-animations.py # open, minimise, restore, close a window of its own
-/usr/bin/python3 tools/test-snap-layouts.py # Win+Z by keys and pointer, snap assist, dragging to the top
+/usr/bin/python3 tools/test-snap-layouts.py # Win+Z by keys and pointer, snap assist, dragging to the top and the edges
 /usr/bin/python3 tools/test-window-frames.py # corners, edge and shadow, measured against the pixels
 /usr/bin/python3 tools/test-gtk-window-style.py # the GTK title bar block: written, parsed, taken back
 /usr/bin/python3 tools/test-window-mica.py # Mica: over a white window, for dialogs, not for non-GTK windows
@@ -492,8 +506,9 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/windowMica.js` | Windows 11's Mica below GTK windows: the wallpaper, blurred and tinted. |
 | `lib/windowFrames.js` | Windows 11's window corners, edge and shadow, for windows that draw none. |
 | `tools/make-window-shadow.py` | Draws `assets/window-shadow.png` from the measured shadow profile. |
-| `lib/snapGeometry.js` | Snap layouts as numbers: the layouts, their zones, the tiles and snap assist's grid. Unit-tested. |
-| `lib/snapLayouts.js` | Snap layouts: Win+Z, the bar while dragging a window to the top, and snap assist. |
+| `lib/snapGeometry.js` | Snap layouts as numbers: the layouts, their zones, the tiles, the places at the screen's edges and snap assist's grid. Unit-tested. |
+| `lib/snapLayouts.js` | Snap layouts: Win+Z, the bar and the edges while dragging a window, and snap assist. |
+| `lib/snapPreview.js` | Where a dragged window is about to go, as Windows previews it. |
 | `lib/jumpList.js` | The right-click menu. |
 | `lib/shellButtons.js` | Start, Search, Task View, clock, show-desktop. |
 | `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |

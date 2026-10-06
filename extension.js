@@ -213,7 +213,7 @@ export default class Win11TaskbarExtension extends Extension {
     _syncSnapLayouts() {
         const wanted = this._settings.get_boolean('snap-layouts');
         if (wanted && !this._snapLayouts) {
-            this._snapLayouts = new SnapLayouts();
+            this._snapLayouts = new SnapLayouts(this._settings);
         } else if (!wanted && this._snapLayouts) {
             this._snapLayouts.destroy();
             this._snapLayouts = null;
