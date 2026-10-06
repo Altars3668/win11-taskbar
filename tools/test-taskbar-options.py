@@ -19,7 +19,7 @@ def main():
                DBUS_SESSION_BUS_ADDRESS=shell.address)
     schema = 'org.gnome.shell.extensions.win11-taskbar'
     command = ['gsettings', '--schemadir', str(HERE.parent / 'schemas')]
-    keys = ['start-layout', 'start-folders', 'tray-hover', 'tray-hidden-items']
+    keys = ['start-layout', 'start-width', 'start-height', 'start-folders', 'tray-hover', 'tray-hidden-items']
     saved = {k: subprocess.check_output(command + ['get', schema, k], env=env, text=True).strip() for k in keys}
     count = 0
 
@@ -85,6 +85,22 @@ def main():
         setting('start-layout', "'wide'")
         check('可切换八列 Insider 布局', lambda: dump()['startMenu']['w'] == 832 and
               dump()['startMenu']['layout']['columns'] == 8)
+        setting('start-width', '1000')
+        setting('start-height', '900')
+        setting('start-layout', "'custom'")
+
+        def custom_start(width, height, columns, rows):
+            menu = dump()['startMenu']
+            layout = menu['layout']
+            return ((menu['w'], menu['h'], layout['columns'], layout['rows']) == (width, height, columns, rows)
+                    and abs(menu['x'] + menu['w'] / 2 - 960) <= 1)
+        check('自定义 1000×900：九列、五行固定项，仍居中', lambda: custom_start(1000, 900, 9, 5))
+        setting('start-width', '640')
+        setting('start-height', '720')
+        check('默认自定义值与紧凑布局一样大', lambda: custom_start(640, 720, 6, 3))
+        setting('start-width', '4000')
+        setting('start-height', '4000')
+        check('自定义大小不超出屏幕', lambda: custom_start(1920 - 26, 1080 - 48 - 26, 12, 6))
         escape()
 
         empty = {'x': 110, 'y': bar['panel']['y'] + 12, 'w': 1, 'h': 1}

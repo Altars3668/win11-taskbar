@@ -118,9 +118,37 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         group.add(this._combo(settings, 'start-layout', _('Menu size'), [
             ['compact', _('Compact \u2014 six columns')],
             ['wide', _('Wide \u2014 eight columns (Insider)')],
+            ['custom', _('Custom size')],
             ['fullscreen', _('Full-screen Start')],
             ['app-grid', _('GNOME application screen')],
         ]));
+        // A Start of one's own size: the pinned grid takes the columns and
+        // rows that fit, and the menu never outgrows the screen.
+        const sizeRows = [
+            ['start-width', _('Width'),
+                _('Every 96 pixels holds another column of pinned apps.')],
+            ['start-height', _('Height'),
+                _('Every 84 pixels holds another row of pinned apps.')],
+        ].map(([key, title, subtitle]) => {
+            const row = new Adw.SpinRow({
+                title,
+                subtitle,
+                adjustment: new Gtk.Adjustment({
+                    lower: 480, upper: 4000, step_increment: 16, page_increment: 96,
+                }),
+            });
+            settings.bind(key, row, 'value', Gio.SettingsBindFlags.DEFAULT);
+            group.add(row);
+            return row;
+        });
+        const syncSize = () => {
+            const custom = settings.get_string('start-layout') === 'custom';
+            for (const row of sizeRows)
+                row.visible = custom;
+        };
+        const sizeId = settings.connect('changed::start-layout', syncSize);
+        this._cleanup.push(() => settings.disconnect(sizeId));
+        syncSize();
         const folders = new Adw.PreferencesGroup({
             title: _('Shortcuts beside the power button'),
             description: _('Choose which folders and apps appear in Start. Task Manager remains available in the Win+X menu.'),

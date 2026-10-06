@@ -20,6 +20,7 @@
     <value value="1" nick="wide"/>
     <value value="2" nick="fullscreen"/>
     <value value="3" nick="app-grid"/>
+    <value value="4" nick="custom"/>
   </enum>
 
   <enum id="org.gnome.shell.extensions.win11-taskbar.tray-hover">
@@ -277,7 +278,19 @@
     <key name="start-layout" enum="org.gnome.shell.extensions.win11-taskbar.start-layout">
       <default>'compact'</default>
       <summary>Start menu layout</summary>
-      <description>Compact six-column layout, or the larger eight-column Insider layout.</description>
+      <description>Compact six-column layout, the larger eight-column Insider layout, or a size of your own (start-width × start-height).</description>
+    </key>
+    <key name="start-width" type="i">
+      <range min="480" max="4000"/>
+      <default>640</default>
+      <summary>Start menu width, custom size</summary>
+      <description>In logical pixels. Used when start-layout is custom; the pinned grid takes as many 96px columns as fit.</description>
+    </key>
+    <key name="start-height" type="i">
+      <range min="480" max="4000"/>
+      <default>720</default>
+      <summary>Start menu height, custom size</summary>
+      <description>In logical pixels. Used when start-layout is custom; the extra height goes to more rows of pinned apps.</description>
     </key>
     <key name="start-pinned" type="as">
       <default>[]</default>

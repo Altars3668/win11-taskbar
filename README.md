@@ -80,7 +80,7 @@ instead of the Overview. Right-clicking a tile pins or unpins it.
 The account avatar opens account information, lock, sign-out and the system's
 available user-switching actions. Escape and a click outside dismiss Start.
 
-默认使用 640×720 的六列紧凑布局；设置中可选历史实测的 832×864 Insider 八列布局。
+默认使用 640×720 的六列紧凑布局；设置中可选历史实测的 832×864 Insider 八列布局，或自定义宽高：每 96px 宽多一列固定项，每 84px 高多一行。
 两种布局均限制在显示器可用区域内。Insider 布局距任务栏 13px，固定项间距为 96×84，图标为 32px。 Note that is the
 *new* Start menu — the measurement machine runs Insider build 29671, where
 it is 832 wide with 8 columns rather than the 640 and 6 of the shipping

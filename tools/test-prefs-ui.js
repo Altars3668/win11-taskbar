@@ -44,15 +44,19 @@ app.connect('activate', () => {
     prefs.fillPreferencesWindow(window);
     window.present();
     const switches = [];
+    const spins = [];
     const walk = widget => {
         if (widget instanceof Adw.SwitchRow)
             switches.push(widget);
+        if (widget instanceof Adw.SpinRow)
+            spins.push(widget);
         for (let child = widget.get_first_child(); child; child = child.get_next_sibling())
             walk(child);
     };
     let attempts = 0;
     GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
         switches.length = 0;
+        spins.length = 0;
         pages.forEach(walk);
         switches.push(...madeSwitches);
         const tray = switches.find(row => row.title === 'Test item (tray-alpha)');
@@ -77,10 +81,28 @@ app.connect('activate', () => {
             resources.active = false;
             if (settings.get_strv('start-folders').includes('resources'))
                 throw new Error('关闭入口开关后没有取消选择');
+            // 开始菜单自定义大小：只在选了“自定义大小”时出现，数值直接写入设置。
+            const width = spins.find(row => row.title === 'Width');
+            const height = spins.find(row => row.title === 'Height');
+            if (!width || !height)
+                throw new Error('没有开始菜单的宽、高数字框');
+            settings.set_string('start-layout', 'compact');
+            if (width.visible || height.visible)
+                throw new Error('非自定义大小时仍显示宽、高');
+            settings.set_string('start-layout', 'custom');
+            if (!width.visible || !height.visible)
+                throw new Error('选自定义大小后没有显示宽、高');
+            width.value = 1000;
+            height.value = 900;
+            if (settings.get_int('start-width') !== 1000 || settings.get_int('start-height') !== 900)
+                throw new Error('宽、高没有写入设置');
+            settings.reset('start-layout');
+            settings.reset('start-width');
+            settings.reset('start-height');
             window.close();
             if (prefs._cleanup.length !== 0)
                 throw new Error('关闭偏好窗口后仍保留设置/总线监听');
-            print('偏好窗口、按程序名折叠、入口选择与关闭清理检查通过，0 项失败');
+            print('偏好窗口、按程序名折叠、入口选择、开始菜单自定义大小与关闭清理检查通过，0 项失败');
         } catch (error) {
             failure = error;
             printerr(error.stack);
