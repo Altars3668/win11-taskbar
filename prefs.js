@@ -261,6 +261,10 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('Super+1…9 reach taskbar buttons'),
             _('As on Windows. GNOME binds these to the favourites list, '
               + 'which disagrees once something unpinned is running.')));
+        shortcuts.add(this._switch(settings, 'snap-layouts',
+            _('Snap layouts'),
+            _('Super+Z over a window, or drag a window against the top of '
+              + 'the screen; snap assist then fills the other zones.')));
 
         const keyList = new Adw.PreferencesGroup({title: _('Also bound')});
         page.add(keyList);
@@ -274,6 +278,7 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             ['Super+I', _('Settings')],
             ['Super+R', _('Run')],
             ['Super+T', _('Step through taskbar buttons')],
+            ['Super+Z', _('Snap layouts for the focused window')],
         ])
             keyList.add(new Adw.ActionRow({title: combo, subtitle: what}));
 

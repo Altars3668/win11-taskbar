@@ -198,6 +198,15 @@
       <default><![CDATA[['<Super>t']]]></default>
       <summary>Step through the taskbar buttons</summary>
     </key>
+    <key name="snap-layouts-key" type="as">
+      <default><![CDATA[['<Super>z']]]></default>
+      <summary>Open the snap layouts over the focused window</summary>
+    </key>
+    <key name="snap-layouts" type="b">
+      <default>true</default>
+      <summary>Snap layouts</summary>
+      <description>Windows 11's snap layouts: Win+Z over a window, the bar at the top of the screen while a window is dragged there, and snap assist for the zones left over.</description>
+    </key>
     <key name="app-key-1" type="as">
       <default><![CDATA[['<Super>1']]]></default>
       <summary>Activate taskbar button 1</summary>

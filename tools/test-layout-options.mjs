@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {startLayout, START_SHORTCUTS} from '../lib/startOptions.js';
 import {besideBar, isVertical, placeAtEnd, placeBeside, sideFacingBar, towardsBar} from '../lib/barEdge.js';
+import {assistGrid, LAYOUTS, layoutsFor, rectAt, tileZones, zoneRect} from '../lib/snapGeometry.js';
 import {TRAY} from '../lib/spec.js';
 
 // 区域是任务栏旁边的空间：1920×1080 的屏幕减去底部 48px 的任务栏。
@@ -67,6 +68,44 @@ assert(isVertical('left') && isVertical('right') && !isVertical('top') && !isVer
 const beside = besideBar('left', screen, 48);
 assert.deepEqual([startLayout('compact', beside.width, beside.height, 1).height,
     startLayout('fullscreen', beside.width, beside.height, 1).height], [720, 1080 - 26]);
+// 贴靠布局：六种布局；区块在工作区里边对边，不留缝也不重叠。
+const work = {x: 0, y: 0, width: 1920, height: 1032};
+assert.deepEqual(LAYOUTS.map(l => l.id), ['halves', 'two-thirds', 'thirds', 'half-quarters', 'quarters', 'wide-middle']);
+const rects = id => LAYOUTS.find(l => l.id === id).zones.map(z => zoneRect(work, z));
+assert.deepEqual(rects('halves'), [{x: 0, y: 0, width: 960, height: 1032}, {x: 960, y: 0, width: 960, height: 1032}]);
+assert.deepEqual(rects('two-thirds').map(r => r.width), [1280, 640]);
+assert.deepEqual(rects('thirds').map(r => [r.x, r.width]), [[0, 640], [640, 640], [1280, 640]]);
+assert.deepEqual(rects('quarters').map(r => [r.x, r.y, r.width, r.height]),
+    [[0, 0, 960, 516], [960, 0, 960, 516], [0, 516, 960, 516], [960, 516, 960, 516]]);
+for (const layout of LAYOUTS) {
+    const area = layout.zones.map(z => zoneRect({x: 13, y: 7, width: 1001, height: 777}, z))
+        .reduce((sum, r) => sum + r.width * r.height, 0);
+    assert.equal(area, 1001 * 777, layout.id);
+}
+// 竖屏时同样的布局转过来，上下排。
+const portrait = layoutsFor({x: 0, y: 0, width: 1080, height: 1872});
+assert.deepEqual(portrait[0].zones.map(z => zoneRect({x: 0, y: 0, width: 1080, height: 1872}, z)),
+    [{x: 0, y: 0, width: 1080, height: 936}, {x: 0, y: 936, width: 1080, height: 936}]);
+// 实测：98×64 的格子里三等分的区块各 30px 宽、相隔 4px。
+assert.deepEqual(tileZones(LAYOUTS[2].zones, 98, 64, 4).map(r => [r.x, r.width]), [[0, 30], [34, 30], [68, 30]]);
+assert.deepEqual(tileZones(LAYOUTS[0].zones, 98, 64, 4).map(r => [r.x, r.width, r.height]), [[0, 47, 64], [51, 47, 64]]);
+assert.deepEqual(tileZones(LAYOUTS[4].zones, 98, 64, 4).map(r => [r.x, r.y, r.width, r.height]),
+    [[0, 0, 47, 30], [51, 0, 47, 30], [0, 34, 47, 30], [51, 34, 47, 30]]);
+assert.equal(rectAt(rects('halves'), 1000, 10), 1);
+assert.equal(rectAt(rects('halves'), 1920, 10), -1);
+// 贴靠辅助：缩略图 195 高、间隔 24，每行居中，整体在剩余区块里居中。
+const zone = {x: 960, y: 0, width: 960, height: 1032};
+const grid = assistGrid(Array(10).fill(16 / 9), zone);
+assert(grid.every(r => r && r.height === 195 && r.width <= 288));
+const rows = [...new Set(grid.map(r => r.y))];
+assert.deepEqual(rows.map((y, i) => i ? y - rows[i - 1] : 0).slice(1), [219, 219, 219]);
+for (const y of rows) {
+    const row = grid.filter(r => r.y === y);
+    const mid = (row[0].x + row.at(-1).x + row.at(-1).width) / 2;
+    assert(Math.abs(mid - (zone.x + zone.width / 2)) <= 1);
+}
+assert(Math.abs((rows[0] + rows.at(-1) + 195) / 2 - 516) <= 1);
+assert.deepEqual(assistGrid(Array(30).fill(1.5), {x: 0, y: 0, width: 500, height: 300}).filter(Boolean).length, 1);
 assert.equal(new Set(START_SHORTCUTS.map(s => s.id)).size, START_SHORTCUTS.length);
 assert(START_SHORTCUTS.some(s => s.id === 'resources' && s.desktop === 'net.nokyan.Resources.desktop'));
 assert.deepEqual([TRAY.trayToSystemGap, TRAY.systemToClockGap, TRAY.clockToDesktopGap], [4, 8, 4]);

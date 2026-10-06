@@ -130,6 +130,17 @@ completes the effects; only their start, end, length and curve change. A
 window launched from the taskbar still comes out of its button. A setting
 puts GNOME's own animations back.
 
+**Snap layouts.** Win+Z opens Windows 11's snap layouts at the focused
+window's top right, below its title bar: six layouts in 98×64 tiles, numbered
+— a number picks a layout, the next a zone — or a click on a zone. Dragging a
+window up against the top of the screen opens them as a bar there instead,
+with the target zone previewed on screen, and letting go over a zone puts the
+window in it. Snap assist then offers the other windows for the zone still
+empty, one zone after another, until they are filled or it is waved away
+with Escape or a click elsewhere. Sizes and placement were measured on
+Windows; the suggested snap groups Windows adds above the layouts are not
+reproduced. A setting turns it all off and gives Super+Z back to GNOME.
+
 **Switching input.** Win+Space opens the input flyout with the next input
 method marked; Space moves on, Shift+Space back, and letting go of the
 Windows key chooses — a quick tap switches at once. Fcitx 5's groups and
@@ -392,6 +403,7 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-input-switch.py # Win+Space: the list, Space onward, release to choose
 /usr/bin/python3 tools/test-edges.py      # the bar on each edge, at 64 and 32px, and what opens from it
 /usr/bin/python3 tools/test-window-animations.py # open, minimise, restore, close a window of its own
+/usr/bin/python3 tools/test-snap-layouts.py # Win+Z by keys and pointer, snap assist, dragging to the top
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
 node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
@@ -408,6 +420,8 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/taskList.js` | The strip, kept in sync with pinned and running apps. |
 | `lib/windowPreview.js` | The thumbnail flyout and Aero Peek. |
 | `lib/windowAnimations.js` | Windows 11's window open, close, minimise and restore animations, over GNOME's. |
+| `lib/snapGeometry.js` | Snap layouts as numbers: the layouts, their zones, the tiles and snap assist's grid. Unit-tested. |
+| `lib/snapLayouts.js` | Snap layouts: Win+Z, the bar while dragging a window to the top, and snap assist. |
 | `lib/jumpList.js` | The right-click menu. |
 | `lib/shellButtons.js` | Start, Task View, clock, show-desktop. |
 | `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |

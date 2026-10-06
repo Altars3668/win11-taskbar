@@ -33,6 +33,7 @@ gjs -m "$ROOT/tools/test-application-order.js"
 /usr/bin/python3 "$ROOT/tools/test-notification-centre.py"
 /usr/bin/python3 "$ROOT/tools/test-wifi-flow.py"
 /usr/bin/python3 "$ROOT/tools/test-window-animations.py"
+/usr/bin/python3 "$ROOT/tools/test-snap-layouts.py"
 # 换边会重建任务栏；放在最后，结束时复位到底边。
 /usr/bin/python3 "$ROOT/tools/test-edges.py"
 

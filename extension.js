@@ -20,6 +20,7 @@ import {ShellMenus} from './lib/shellMenus.js';
 import {unwatchShellShutdown, watchShellShutdown} from './lib/shellShutdown.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
+import {SnapLayouts} from './lib/snapLayouts.js';
 import {WindowAnimations} from './lib/windowAnimations.js';
 import {WindowMotion} from './lib/windowMotion.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
@@ -58,6 +59,12 @@ export default class Win11TaskbarExtension extends Extension {
                 () => this._syncShellMenus()),
             this._settings.connect('changed::window-animations',
                 () => this._syncWindowAnimations()),
+            // Win+Z is bound with the taskbar's other keys, so they are
+            // bound afresh.
+            this._settings.connect('changed::snap-layouts', () => {
+                this._syncSnapLayouts();
+                this._rebuild();
+            }),
         ];
 
         // One watcher for the whole session, shared by every taskbar.
@@ -68,6 +75,7 @@ export default class Win11TaskbarExtension extends Extension {
         // when they are made, and should get the one lib/shellMenus.js wraps.
         this._syncShellMenus();
         this._syncWindowAnimations();
+        this._syncSnapLayouts();
         this._windowMotion = new WindowMotion();
         this._notificationPersistence = new NotificationPersistence();
         this._attentionToasts = new AttentionToasts();
@@ -103,6 +111,8 @@ export default class Win11TaskbarExtension extends Extension {
         this._windowMotion = null;
         this._windowAnimations?.destroy();
         this._windowAnimations = null;
+        this._snapLayouts?.destroy();
+        this._snapLayouts = null;
         this._notificationPersistence?.destroy();
         this._notificationPersistence = null;
         this._attentionToasts?.destroy();
@@ -154,6 +164,17 @@ export default class Win11TaskbarExtension extends Extension {
         } else if (!wanted && this._windowAnimations) {
             this._windowAnimations.destroy();
             this._windowAnimations = null;
+        }
+    }
+
+    /** Windows 11's snap layouts, while they are wanted. */
+    _syncSnapLayouts() {
+        const wanted = this._settings.get_boolean('snap-layouts');
+        if (wanted && !this._snapLayouts) {
+            this._snapLayouts = new SnapLayouts();
+        } else if (!wanted && this._snapLayouts) {
+            this._snapLayouts.destroy();
+            this._snapLayouts = null;
         }
     }
 
