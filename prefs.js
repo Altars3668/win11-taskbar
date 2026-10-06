@@ -242,6 +242,10 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('Show flashing on taskbar apps'),
             _('An app that needs attention flashes its button instead of '
               + 'showing GNOME’s “is ready” notification.')));
+        group.add(this._switch(settings, 'window-animations',
+            _('Windows-style window animations'),
+            _('Windows grow out of their centre as they open and shrink into '
+              + 'their taskbar button as they minimise.')));
 
         const shortcuts = new Adw.PreferencesGroup({
             title: _('Windows shortcuts'),

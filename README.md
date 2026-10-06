@@ -120,6 +120,16 @@ into (Custom Reboot's "Reboot into…" tile), its tile is hidden and its
 entries appear after Restart in both menus, each still run by that
 extension.
 
+**Window animations.** Windows open, close, minimise and restore the way
+Windows 11 animates them, measured frame by frame on the reference machine:
+a window grows out of its centre from 0.9 of its size while fading in
+(200ms, quick at first), shrinks back to 0.9 and fades as it closes (150ms,
+slow at first), and shrinks into its taskbar button as it minimises and
+comes back out of it as it is restored (220ms each). GNOME still runs and
+completes the effects; only their start, end, length and curve change. A
+window launched from the taskbar still comes out of its button. A setting
+puts GNOME's own animations back.
+
 **Switching input.** Win+Space opens the input flyout with the next input
 method marked; Space moves on, Shift+Space back, and letting go of the
 Windows key chooses — a quick tap switches at once. Fcitx 5's groups and
@@ -381,6 +391,7 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-attention.py  # a window asking for attention flashes its button
 /usr/bin/python3 tools/test-input-switch.py # Win+Space: the list, Space onward, release to choose
 /usr/bin/python3 tools/test-edges.py      # the bar on each edge, at 64 and 32px, and what opens from it
+/usr/bin/python3 tools/test-window-animations.py # open, minimise, restore, close a window of its own
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
 node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
@@ -396,6 +407,7 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/attentionToasts.js` | GNOME's "is ready" notification, unhooked: Windows flashes the button instead. |
 | `lib/taskList.js` | The strip, kept in sync with pinned and running apps. |
 | `lib/windowPreview.js` | The thumbnail flyout and Aero Peek. |
+| `lib/windowAnimations.js` | Windows 11's window open, close, minimise and restore animations, over GNOME's. |
 | `lib/jumpList.js` | The right-click menu. |
 | `lib/shellButtons.js` | Start, Task View, clock, show-desktop. |
 | `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |

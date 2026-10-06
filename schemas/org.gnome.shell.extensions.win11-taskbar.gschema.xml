@@ -354,6 +354,11 @@
       with the top bar hidden these have to live here.</description>
     </key>
 
+    <key name="window-animations" type="b">
+      <default>true</default>
+      <summary>Windows-style window animations</summary>
+      <description>Windows open, close, minimise and restore the way Windows 11 animates them: growing out of their centre, shrinking into their taskbar button. Off leaves GNOME's own animations.</description>
+    </key>
     <key name="flash-attention" type="b">
       <default>true</default>
       <summary>Show flashing on taskbar apps</summary>

@@ -20,6 +20,7 @@ import {ShellMenus} from './lib/shellMenus.js';
 import {unwatchShellShutdown, watchShellShutdown} from './lib/shellShutdown.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
 import {StatusNotifierHost} from './lib/statusNotifier.js';
+import {WindowAnimations} from './lib/windowAnimations.js';
 import {WindowMotion} from './lib/windowMotion.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
 import {setGettext as setEditorGettext} from './lib/quickSettingsEditor.js';
@@ -55,6 +56,8 @@ export default class Win11TaskbarExtension extends Extension {
             this._settings.connect('changed::hide-top-panel', () => this._syncTopPanel()),
             this._settings.connect('changed::context-menu-on-release',
                 () => this._syncShellMenus()),
+            this._settings.connect('changed::window-animations',
+                () => this._syncWindowAnimations()),
         ];
 
         // One watcher for the whole session, shared by every taskbar.
@@ -64,6 +67,7 @@ export default class Win11TaskbarExtension extends Extension {
         // Before the taskbars: their menu managers bind the shell's handler
         // when they are made, and should get the one lib/shellMenus.js wraps.
         this._syncShellMenus();
+        this._syncWindowAnimations();
         this._windowMotion = new WindowMotion();
         this._notificationPersistence = new NotificationPersistence();
         this._attentionToasts = new AttentionToasts();
@@ -97,6 +101,8 @@ export default class Win11TaskbarExtension extends Extension {
         this._destroyTaskbars();
         this._windowMotion?.destroy();
         this._windowMotion = null;
+        this._windowAnimations?.destroy();
+        this._windowAnimations = null;
         this._notificationPersistence?.destroy();
         this._notificationPersistence = null;
         this._attentionToasts?.destroy();
@@ -138,6 +144,17 @@ export default class Win11TaskbarExtension extends Extension {
         for (const bar of this._taskbars ?? [])
             bar.destroy();
         this._taskbars = [];
+    }
+
+    /** Windows' window animations, or GNOME's. */
+    _syncWindowAnimations() {
+        const wanted = this._settings.get_boolean('window-animations');
+        if (wanted && !this._windowAnimations) {
+            this._windowAnimations = new WindowAnimations();
+        } else if (!wanted && this._windowAnimations) {
+            this._windowAnimations.destroy();
+            this._windowAnimations = null;
+        }
     }
 
     /** The shell's own right-click menus follow the same setting as ours. */
