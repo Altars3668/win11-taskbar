@@ -19,7 +19,8 @@ def main():
     schema = 'org.gnome.shell.extensions.win11-taskbar'
     cmd = ['gsettings', '--schemadir', str(HERE.parent / 'schemas')]
     saved = subprocess.check_output(cmd + ['get', schema, 'start-layout'], env=env, text=True).strip()
-    fake = subprocess.Popen(['gjs', '-m', str(HERE / 'fake-fcitx.js')], env=env,
+    # Late, as Fcitx is at login: it owns its name before it answers.
+    fake = subprocess.Popen(['gjs', '-m', str(HERE / 'fake-fcitx.js'), '--late'], env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     count = 0
 
@@ -51,13 +52,30 @@ def main():
         shell.pointer([{'move': [960, 540]}, {'wait': 300}])
         time.sleep(1)
         check('隐藏顶栏真正释放顶边工作区', lambda: dump()['workArea']['y'] == 0 and dump()['workArea']['h'] == 1032)
-        check('读取配置组中的 Fcitx 输入法而非静态项', lambda: dump()['inputMethod']['backend'] == 'fcitx' and
+        check('Fcitx 晚于 Shell 应答时，重试后仍读到配置组中的输入法',
+              lambda: dump()['inputMethod']['backend'] == 'fcitx' and
               {m['id'] for m in dump()['inputMethod']['methods']} == {'keyboard-us', 'rime'})
         click(dump()['inputMethod']['button'])
         check('语言面板可以打开', lambda: dump()['inputMethod']['menuOpen'])
-        row = next(r for r in dump()['inputMethod']['items'] if r['label'] == 'Rime')
-        click(row)
+        rows = {r['subtitle']: r for r in dump()['inputMethod']['items'] if r.get('subtitle')}
+        check('两行条目：上为语言、下为输入法，当前项有标记',
+              lambda: rows.get('Rime', {}).get('label') == 'Chinese' and
+              rows.get('English (US)', {}).get('label') == 'English' and
+              rows['English (US)']['current'] and not rows['Rime']['current'])
+        click(rows['Rime'])
         check('选择后实际调用 Fcitx 切换并更新标签', lambda: dump()['inputMethod']['label'] == '中')
+        # 在 Fcitx 设置里加了输入法：下次打开就列出，无需重启。
+        shell.conn.call_sync('org.fcitx.Fcitx5', '/controller', 'org.fcitx.Fcitx.Controller1',
+                             'TestSetGroupMethods',
+                             ctx.GLib.Variant('(as)', (['keyboard-us', 'rime', 'pinyin'],)),
+                             None, 0, 3000, None)
+        time.sleep(0.3)
+        click(dump()['inputMethod']['button'])
+        check('每次打开都重读 Fcitx 配置组', lambda: dump()['inputMethod']['menuOpen'] and any(
+            r.get('subtitle') == 'Pinyin' and r['label'] == 'Chinese (China)'
+            for r in dump()['inputMethod']['items']))
+        shell.trigger('keys:' + json.dumps([{'press': 0xff1b}, {'wait': 50}, {'release': 0xff1b}]))
+        time.sleep(0.4)
         current = shell.conn.call_sync('org.fcitx.Fcitx5', '/controller', 'org.fcitx.Fcitx.Controller1',
                                       'CurrentInputMethod', None, None, 0, 3000, None).unpack()[0]
         assert current == 'rime', current
@@ -87,7 +105,9 @@ def main():
         shell.trigger('notifications-close')
         setting("'fullscreen'")
         shell.trigger('start-menu')
-        check('全屏开始菜单按可用工作区展开', lambda: dump()['startMenu']['w'] >= 1800 and dump()['startMenu']['h'] >= 980)
+        # Not yet allocated in the first frame after opening: no size.
+        check('全屏开始菜单按可用工作区展开', lambda: (dump()['startMenu']['w'] or 0) >= 1800 and
+              (dump()['startMenu']['h'] or 0) >= 980)
         shell.trigger('start-menu-close')
         setting("'app-grid'")
         click(dump()['startButton'])

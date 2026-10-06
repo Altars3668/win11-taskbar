@@ -11,6 +11,7 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {DebugService} from './lib/debugService.js';
+import {NotificationPersistence} from './lib/notificationPersistence.js';
 import {setGettext as setMenuGettext} from './lib/dbusMenu.js';
 import {setGettext} from './lib/jumpList.js';
 import {Taskbar} from './lib/panel.js';
@@ -23,6 +24,7 @@ import {setGettext as setTrayGettext} from './lib/trayArea.js';
 import {setGettext as setEditorGettext} from './lib/quickSettingsEditor.js';
 import {setGettext as setLinksGettext} from './lib/quickLinks.js';
 import {setGettext as setClipGettext} from './lib/clipboardHistory.js';
+import {setGettext as setNotificationGettext} from './lib/notificationList.js';
 import {cleanup as cleanupTheme, setExtensionSettings} from './lib/theme.js';
 
 export default class Win11TaskbarExtension extends Extension {
@@ -34,6 +36,7 @@ export default class Win11TaskbarExtension extends Extension {
         setEditorGettext(_);
         setLinksGettext(_);
         setClipGettext(_);
+        setNotificationGettext(_);
 
         this._settings = this.getSettings();
         setExtensionSettings(this._settings);
@@ -58,6 +61,7 @@ export default class Win11TaskbarExtension extends Extension {
         // when they are made, and should get the one lib/shellMenus.js wraps.
         this._syncShellMenus();
         this._windowMotion = new WindowMotion();
+        this._notificationPersistence = new NotificationPersistence();
         this._rebuild();
         this._syncTopPanel();
 
@@ -88,6 +92,8 @@ export default class Win11TaskbarExtension extends Extension {
         this._destroyTaskbars();
         this._windowMotion?.destroy();
         this._windowMotion = null;
+        this._notificationPersistence?.destroy();
+        this._notificationPersistence = null;
 
         this._statusHost?.destroy();
         this._statusHost = null;

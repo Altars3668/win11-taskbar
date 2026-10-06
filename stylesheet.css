@@ -405,6 +405,48 @@
     background-color: rgba(255, 255, 255, 0.08);
 }
 
+/* The input method list, as Windows 11 lays it out: the taskbar's mark
+   for each method in a column, then the language over the keyboard or
+   IME, and an accent bar on the one in use. */
+.w11-tray-menu .w11-input-row {
+    padding: 6px 12px 6px 4px;
+    spacing: 8px;
+}
+
+.w11-tray-menu .w11-input-row.w11-input-current {
+    background-color: rgba(0, 0, 0, 0.0373);
+}
+
+.w11-tray-menu.dark .w11-input-row.w11-input-current {
+    background-color: rgba(255, 255, 255, 0.0605);
+}
+
+.w11-input-pill {
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background-color: rgb(0, 95, 184);
+}
+
+.w11-tray-menu.dark .w11-input-pill {
+    background-color: rgb(96, 205, 255);
+}
+
+.w11-input-mark {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.w11-input-subtitle {
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.62);
+}
+
+.w11-tray-menu.dark .w11-input-subtitle {
+    color: rgba(255, 255, 255, 0.72);
+}
+
 /* --------------------------------------------------- notification area */
 
 .w11-tray-tooltip {
@@ -687,6 +729,33 @@
     transition-duration: 0ms;
 }
 
+/* Yaru styles a toggle that is checked and focused or hovered with
+   four-part selectors (.quick-toggle:focus:hover:checked), which would paint
+   the whole tile — the label below the card included — in the accent. Only
+   the card shows state here, so the tile's own frame is pinned in every
+   state: the repeated class outranks those selectors. */
+.w11-flyout .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile,
+.w11-flyout .quick-settings-grid .w11-quick-tile .w11-quick-control.w11-quick-control.w11-quick-control,
+.w11-flyout .quick-settings-grid .w11-quick-tile .quick-toggle-menu-button.quick-toggle-menu-button.quick-toggle-menu-button {
+    background: none;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.w11-flyout .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile {
+    color: #1a1a1a;
+}
+
+.w11-flyout.dark .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile {
+    color: #ffffff;
+}
+
+.w11-flyout .quick-settings-grid .w11-quick-tile .w11-quick-control.w11-quick-control.w11-quick-control,
+.w11-flyout .quick-settings-grid .w11-quick-tile .quick-toggle-menu-button.quick-toggle-menu-button.quick-toggle-menu-button {
+    color: inherit;
+}
+
 .w11-flyout .w11-quick-tile {
     min-height: 84px;
 }
@@ -723,6 +792,12 @@
 .w11-flyout.dark .w11-quick-tile:checked .w11-quick-card {
     background-color: #0067c0;
     color: #ffffff;
+}
+
+/* Windows lightens an accent-filled control under the pointer. */
+.w11-flyout .w11-quick-tile:checked:hover .w11-quick-card,
+.w11-flyout.dark .w11-quick-tile:checked:hover .w11-quick-card {
+    background-color: #1a76c6;
 }
 
 .w11-flyout .w11-quick-tile .w11-quick-control,
@@ -837,6 +912,153 @@
 .w11-flyout .quick-toggle-menu .popup-menu-item:checked {
     background-color: rgb(0, 120, 212);
     color: #ffffff;
+}
+
+/* The Wi-Fi list opens a network in place, as Windows 11 does: the row
+   and what opened under it read as one card, the status in secondary
+   text, then the choices, with the accent on the one that goes ahead. */
+.w11-quick-page .popup-menu-item.w11-wifi-open {
+    background-color: rgba(0, 0, 0, 0.0373);
+    border-radius: 4px 4px 0 0;
+}
+
+.w11-flyout.dark .w11-quick-page .popup-menu-item.w11-wifi-open {
+    background-color: rgba(255, 255, 255, 0.0605);
+}
+
+.w11-wifi-details {
+    padding: 0 12px 10px 44px;
+    spacing: 8px;
+    border-radius: 0 0 4px 4px;
+    background-color: rgba(0, 0, 0, 0.0373);
+}
+
+.w11-flyout.dark .w11-wifi-details {
+    background-color: rgba(255, 255, 255, 0.0605);
+}
+
+.w11-wifi-status {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.62);
+}
+
+.w11-flyout.dark .w11-wifi-status {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.w11-wifi-actions {
+    spacing: 8px;
+}
+
+.w11-wifi-button {
+    min-width: 80px;
+    padding: 5px 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+    background-color: rgba(255, 255, 255, 0.7);
+    color: #1a1a1a;
+}
+
+.w11-wifi-button:hover {
+    background-color: rgba(249, 249, 249, 0.5);
+}
+
+.w11-flyout.dark .w11-wifi-button {
+    border-color: rgba(255, 255, 255, 0.0698);
+    background-color: rgba(255, 255, 255, 0.0605);
+    color: #ffffff;
+}
+
+.w11-flyout.dark .w11-wifi-button:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+.w11-wifi-button.w11-wifi-accent {
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgb(0, 95, 184);
+    color: #ffffff;
+}
+
+.w11-wifi-button.w11-wifi-accent:hover {
+    background-color: rgba(0, 95, 184, 0.9);
+}
+
+.w11-flyout.dark .w11-wifi-button.w11-wifi-accent {
+    background-color: rgb(96, 205, 255);
+    color: #000000;
+}
+
+.w11-flyout.dark .w11-wifi-button.w11-wifi-accent:hover {
+    background-color: rgba(96, 205, 255, 0.9);
+}
+
+.w11-wifi-button.w11-wifi-accent:insensitive {
+    border-color: transparent;
+    background-color: rgba(0, 0, 0, 0.2169);
+    color: #ffffff;
+}
+
+.w11-flyout.dark .w11-wifi-button.w11-wifi-accent:insensitive {
+    background-color: rgba(255, 255, 255, 0.1581);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Windows' check box: a 20px rounded square, filled with the accent. */
+.w11-wifi-details .check-box StIcon {
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.4458);
+}
+
+.w11-wifi-details .check-box:checked StIcon,
+.w11-wifi-details .check-box:checked:hover StIcon,
+.w11-wifi-details .check-box:checked:active StIcon {
+    border-color: transparent;
+    background-color: rgb(0, 95, 184);
+    color: #ffffff;
+}
+
+.w11-flyout.dark .w11-wifi-details .check-box StIcon {
+    border-color: rgba(255, 255, 255, 0.6047);
+}
+
+.w11-flyout.dark .w11-wifi-details .check-box:checked StIcon,
+.w11-flyout.dark .w11-wifi-details .check-box:checked:hover StIcon,
+.w11-flyout.dark .w11-wifi-details .check-box:checked:active StIcon {
+    border-color: transparent;
+    background-color: rgb(96, 205, 255);
+    color: #000000;
+}
+
+.w11-wifi-details .check-box:focus StBin {
+    box-shadow: none;
+}
+
+.w11-wifi-key {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+    border-bottom-color: rgba(0, 0, 0, 0.4458);
+    background-color: rgba(255, 255, 255, 0.7);
+    color: #1a1a1a;
+}
+
+.w11-wifi-key:focus {
+    border-bottom: 2px solid rgb(0, 95, 184);
+    background-color: #ffffff;
+    box-shadow: none !important;
+}
+
+.w11-flyout.dark .w11-wifi-key {
+    border-color: rgba(255, 255, 255, 0.08);
+    border-bottom-color: rgba(255, 255, 255, 0.5442);
+    background-color: rgba(255, 255, 255, 0.0605);
+    color: #ffffff;
+}
+
+.w11-flyout.dark .w11-wifi-key:focus {
+    border-bottom: 2px solid rgb(96, 205, 255);
+    background-color: rgba(30, 30, 30, 0.7);
+    box-shadow: none !important;
 }
 
 /* The notification centre keeps GNOME's own columns: forcing a width on
@@ -1246,9 +1468,89 @@
 
 /* 通知独立卡片占满列宽，不保留 GNOME 叠层消息的侧边 inset。 */
 .w11-flat-notification-list, .w11-notification-cards { margin: 0; padding: 0; }
-.w11-notification-cards { spacing: 8px; }
-.w11-flat-notification-card { margin: 0; padding: 8px; min-width: 0; }
-.w11-notification-empty { padding: 16px 0; font-size: 12px; }
+/* The gap above each card is the card's own margin, not the box's
+   spacing, so a card closing up takes its gap away with it. */
+.w11-notification-cards { spacing: 0; }
+.w11-notification-cards .w11-flat-notification-card {
+    margin: 8px 0 0 0;
+    padding: 8px;
+    min-width: 0;
+}
+.w11-notification-empty { padding: 16px 0 8px 0; margin-right: 10px; font-size: 12px; }
+
+.w11-notification-header {
+    padding: 2px 14px 0 4px;
+    spacing: 8px;
+}
+
+/* Windows 11 draws a flyout's scrollbar as a thin line in a gutter beside
+   the content, widening when the pointer is on it — never a bar over the
+   cards. The list reaches into the panel's right padding for that gutter
+   and stops its cards short of it; the date and the calendar keep 12px. */
+.w11-notification-cards { padding-right: 10px; }
+.w11-notification-centre .w11-notification-panel .w11-notification-date,
+.w11-notification-centre .w11-notification-panel .calendar { margin-right: 10px; }
+
+/* St's min-width is the content box: the bar is 8px either way, the
+   line in it 2px, and 6px under the pointer. */
+.w11-notification-scroll StScrollBar {
+    min-width: 2px;
+    padding: 0 3px;
+}
+
+.w11-notification-scroll StScrollBar:hover {
+    min-width: 6px;
+    padding: 0 1px;
+}
+
+.w11-notification-scroll StScrollBar > .vhandle {
+    border: none;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.45);
+}
+
+.w11-notification-scroll StScrollBar > .vhandle:hover,
+.w11-notification-scroll StScrollBar > .vhandle:active {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.w11-notification-centre.dark .w11-notification-scroll StScrollBar > .vhandle {
+    background-color: rgba(255, 255, 255, 0.45);
+}
+
+.w11-notification-centre.dark .w11-notification-scroll StScrollBar > .vhandle:hover,
+.w11-notification-centre.dark .w11-notification-scroll StScrollBar > .vhandle:active {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+.w11-notification-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.w11-notification-clear {
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    color: inherit;
+    background: none;
+}
+
+.w11-notification-clear:hover {
+    background-color: rgba(0, 0, 0, 0.0373);
+}
+
+.w11-notification-clear:active {
+    background-color: rgba(0, 0, 0, 0.0241);
+}
+
+.w11-notification-centre.dark .w11-notification-clear:hover {
+    background-color: rgba(255, 255, 255, 0.0605);
+}
+
+.w11-notification-centre.dark .w11-notification-clear:active {
+    background-color: rgba(255, 255, 255, 0.0419);
+}
 
 /* Our own notification centre, in place of GNOME's date menu. */
 .w11-notification-centre {
@@ -1259,7 +1561,8 @@
     background: none;
     border: 1px solid transparent;
     border-radius: 8px;
-    padding: 12px;
+    /* The right padding is mostly the list's scrollbar gutter; see below. */
+    padding: 12px 2px 12px 12px;
     spacing: 8px;
     box-shadow: none;
     color: #1a1a1a;

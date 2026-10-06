@@ -4,10 +4,15 @@
  * There is no guarantee any app with a tray icon is installed, and the test
  * shell runs on its own bus anyway, so the test supplies its own item.
  *
- *   gjs -m tools/fake-tray-item.js [id] [icon-name]
+ *   gjs -m tools/fake-tray-item.js [id] [icon-name] [--late] [--theme-path]
  *
  * Runs until killed. Also exports a DBusMenu with a couple of entries, so
  * the right-click path gets exercised too.
+ *
+ * --theme-path does what Chromium and Edge do: the icon is a PNG in a
+ * private directory named by IconThemePath, the title is empty and only the
+ * tooltip names the app. --late registers with the watcher before the item
+ * is exported, as a racing app can, so the host's first read finds nothing.
  */
 
 import Gio from 'gi://Gio';
@@ -16,6 +21,8 @@ import GLib from 'gi://GLib';
 const id = ARGV[0] ?? 'win11-taskbar-test';
 const iconName = ARGV[1] ?? 'dialog-information-symbolic';
 const notifyOnAbout = ARGV.includes('--notify-about');
+const late = ARGV.includes('--late');
+const themePath = ARGV.includes('--theme-path');
 let aboutCount = 0;
 let layoutCount = 0;
 let revision = 1;
@@ -131,6 +138,17 @@ const menu = {
     },
 };
 
+if (themePath) {
+    const GdkPixbuf = (await import('gi://GdkPixbuf')).default;
+    const dir = GLib.dir_make_tmp('fake-tray-XXXXXX');
+    const pixbuf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, true, 8, 32, 32);
+    pixbuf.fill(0x1e88e5ff);
+    pixbuf.savev(GLib.build_filenamev([dir, `${iconName}.png`]), 'png', [], []);
+    item.IconThemePath = dir;
+    item.Title = '';
+    item.ToolTip = ['', [], 'Fake Chromium', ''];
+}
+
 const itemImpl = Gio.DBusExportedObject.wrapJSObject(ITEM_XML, item);
 const menuImpl = Gio.DBusExportedObject.wrapJSObject(MENU_XML, menu);
 
@@ -138,8 +156,19 @@ const busName = `org.kde.StatusNotifierItem-${GLib.uuid_string_random().replace(
 
 Gio.bus_own_name(Gio.BusType.SESSION, busName, Gio.BusNameOwnerFlags.NONE,
     connection => {
-        itemImpl.export(connection, '/StatusNotifierItem');
-        menuImpl.export(connection, '/MenuBar');
+        const exportAll = () => {
+            itemImpl.export(connection, '/StatusNotifierItem');
+            menuImpl.export(connection, '/MenuBar');
+        };
+        if (late) {
+            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1500, () => {
+                exportAll();
+                print('exported');
+                return GLib.SOURCE_REMOVE;
+            });
+        } else {
+            exportAll();
+        }
     },
     (connection, name) => {
         connection.call('org.kde.StatusNotifierWatcher', '/StatusNotifierWatcher',

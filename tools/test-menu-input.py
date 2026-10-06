@@ -86,10 +86,11 @@ def main():
           lambda: 'Account information' in dump()['bars'][0]['startMenu']['accountMenuItems'])
     def account_anchored():
         start = dump()['bars'][0]['startMenu']
-        menu, avatar = start['accountMenu'], start['avatar']
-        return (abs(menu['x'] + menu['w'] / 2 - avatar['x'] - avatar['w'] / 2) < 4 and
-                menu['y'] + menu['h'] <= avatar['y'])
-    check('账户菜单锚定头像向上出现，不从侧边滑出', account_anchored)
+        menu, button = start['accountMenu'], start['accountButton']
+        return (abs(menu['x'] - button['x']) <= 1 and
+                menu['y'] + menu['h'] <= button['y'] and
+                start['x'] <= menu['x'] and menu['x'] + menu['w'] <= start['x'] + start['w'])
+    check('账户菜单在账户按钮上方左缘对齐，不伸出开始菜单', account_anchored)
     shell.trigger('start-menu-close')
     time.sleep(0.3)
 

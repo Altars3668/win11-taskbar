@@ -14,6 +14,16 @@
 #   tools/testbed.sh stop      tear it down
 #   tools/testbed.sh all       start, launch apps, verify, stop
 #
+# TESTBED_MODE=ubuntu runs the shell in Ubuntu's session mode, with its Yaru
+# theme as on the real desktop, and keeps that mode's own extensions off.
+#
+# TESTBED_MONITOR=3840x2160 TESTBED_SCALE=2 gives the virtual monitor another
+# size and a whole-number scale, as on a HiDPI desktop; the defaults are
+# 1920x1080 and the scale mutter picks for it.
+#
+# TESTBED_ANIMATIONS=1 forces animations on. GNOME switches them off when
+# mutter cannot render on the GPU, which a headless shell may not.
+#
 # TESTBED_LD_LIBRARY_PATH=DIR loads a locally built libmutter into the test
 # shell only, so a compositor patch can be tried before it is installed. If
 # DIR also has libmutter-clutter-18.so.0, tools/testbed-dlopen.c is built
@@ -99,7 +109,13 @@ do_start() {
     ln -sfn "$ROOT" "$target"
     glib-compile-schemas "$ROOT/schemas" || return 1
 
-    local preload=""
+    local preload="" mode_arg="" disabled="[]"
+    if [ -n "${TESTBED_MODE:-}" ]; then
+        mode_arg="--mode=$TESTBED_MODE"
+        # 该模式默认启用的扩展（Dock、AppIndicator 等）在测试里一律关掉。
+        disabled="$(python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1])).get("enabledExtensions", [])).replace(chr(34), chr(39)))' \
+            "/usr/share/gnome-shell/modes/$TESTBED_MODE.json")" || return 1
+    fi
     if [ -n "${TESTBED_LD_LIBRARY_PATH:-}" ] &&
        [ -e "$TESTBED_LD_LIBRARY_PATH/libmutter-clutter-18.so.0" ]; then
         # 用系统 gcc：PATH 里的 cc 可能是别的工具。
@@ -113,14 +129,15 @@ do_start() {
 printf '%s' "\$DBUS_SESSION_BUS_ADDRESS" > "$RUN/bus"
 gsettings set org.gnome.shell disable-user-extensions false
 # 清除上一轮禁用测试留下的记录；只修改隔离测试配置。
-gsettings set org.gnome.shell disabled-extensions "[]"
+gsettings set org.gnome.shell disabled-extensions "$disabled"
 gsettings set org.gnome.shell enabled-extensions "['$UUID']"
+gsettings set org.gnome.desktop.interface scaling-factor ${TESTBED_SCALE:-0}
 gsettings --schemadir "$ROOT/schemas" set \
     org.gnome.shell.extensions.win11-taskbar debug-service true
 ${TESTBED_LD_LIBRARY_PATH:+export LD_LIBRARY_PATH="$TESTBED_LD_LIBRARY_PATH"}
 $preload
-exec gnome-shell --headless --virtual-monitor 1920x1080 \
-    --wayland-display $DISPLAY_NAME
+exec gnome-shell --headless --virtual-monitor ${TESTBED_MONITOR:-1920x1080} \
+    --wayland-display $DISPLAY_NAME $mode_arg${TESTBED_ANIMATIONS:+ --force-animations}
 INNER
     chmod +x "$RUN/inner.sh"
 

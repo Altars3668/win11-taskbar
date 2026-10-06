@@ -21,7 +21,12 @@ gjs -m "$ROOT/tools/test-application-order.js"
 /usr/bin/python3 "$ROOT/tools/test-layout-functional.py"
 /usr/bin/python3 "$ROOT/tools/test-menu-input.py"
 /usr/bin/python3 "$ROOT/tools/test-task-input.py"
+/usr/bin/python3 "$ROOT/tools/test-preview-travel.py"
 /usr/bin/python3 "$ROOT/tools/test-material-input.py"
+/usr/bin/python3 "$ROOT/tools/test-tray-late-item.py"
+/usr/bin/python3 "$ROOT/tools/test-shell-menu-passthrough.py"
+/usr/bin/python3 "$ROOT/tools/test-notification-centre.py"
+/usr/bin/python3 "$ROOT/tools/test-wifi-flow.py"
 
 # 与真实偏好服务相同的类型库和异步主循环；memory 后端不改变测试桌面的选择。
 LC_ALL=C.UTF-8 GSETTINGS_BACKEND=memory \

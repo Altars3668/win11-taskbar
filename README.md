@@ -319,6 +319,15 @@ tools/testbed.sh errors     # JS errors from its log
 tools/testbed.sh stop
 ```
 
+The test shell can be varied through the environment of `start` (and of
+`tools/test-ui.sh`, which starts it):
+
+```bash
+TESTBED_MODE=ubuntu tools/test-ui.sh            # Ubuntu's session mode and Yaru, as on the desktop
+TESTBED_MONITOR=3840x2160 TESTBED_SCALE=2 tools/testbed.sh start  # a HiDPI screen
+TESTBED_ANIMATIONS=1 tools/testbed.sh start     # force animations where mutter renders in software
+```
+
 The debug service also has a `Trigger` method for the parts that normally
 need a click, since the test shell has no pointer:
 
@@ -339,6 +348,10 @@ tools/test-context-menu.py      # GTK 3 and GTK 4, nine cases each, then the she
 tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at a time
 /usr/bin/python3 tools/test-menu-input.py # Start, calendar, account, cards, Resources, motion
 /usr/bin/python3 tools/test-task-input.py # actual left clicks and preview dismissal
+/usr/bin/python3 tools/test-preview-travel.py # the flyout moving between buttons
+/usr/bin/python3 tools/test-shell-menu-passthrough.py # a right click outside a shell menu still lands
+/usr/bin/python3 tools/test-notification-centre.py # dismissing, opening, Clear all, notifications kept
+/usr/bin/python3 tools/test-wifi-flow.py  # joining a network in place, against a recorder
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
 node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
@@ -366,7 +379,9 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/startMenu.js` | The Start menu. |
 | `lib/startPins.js` | Start's pinned apps, kept apart from the taskbar's, as on Windows. |
 | `lib/inputMethodPanel.js` | The input indicator and its flyout, Fcitx 5 or GNOME's input sources. |
-| `lib/notificationList.js` | One flat card per notification, newest first. |
+| `lib/notificationList.js` | One flat card per notification, newest first; Clear all, and cards that slide out. |
+| `lib/notificationPersistence.js` | Keeping an app's notifications after it quits, as Windows does. |
+| `lib/wifiFlow.js` | Joining a Wi-Fi network in place: Connect, then the key in the list. |
 | `lib/superKey.js` | Making Super open it instead of the Overview. |
 | `lib/statusNotifier.js` | The StatusNotifierItem watcher and host. |
 | `lib/dbusMenu.js` | Tray icons' context menus. |
