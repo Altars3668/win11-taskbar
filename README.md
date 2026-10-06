@@ -67,8 +67,10 @@ possible. Icons render at the measured 32 x 48 with a 16 x 16 glyph, with
 DBusMenu context menus, scroll and middle-click forwarded to the app. Items
 listed in `tray-hidden-items` fold behind a chevron into an overflow panel
 placed exactly where Windows puts it: centred on the chevron and flush
-against the bar. An item that starts asking for attention is pulled back
-out, as on Windows.
+against the bar. While it is open the chevron points back at the bar: it
+turns half a turn clockwise as the panel opens and back once the panel has
+gone, in the measured 210ms. An item that starts asking for attention is
+pulled back out, as on Windows.
 
 托盘支持“悬停程序菜单／Windows 式提示／不弹出”三种设置，默认按用户要求显示程序菜单；
 未提供 DBusMenu 的程序退回提示，不在悬停时激活程序。设置页按程序名称选择折叠，

@@ -3,7 +3,8 @@
 
 假托盘项每 300 ms 换一次图标（与微信有未读消息时一样）：悬停打开的程序菜单不能跟着
 一开一合。“隐藏的图标”浮层是轻触即关的：点别处收起，而这一下照样落到点中的东西上——
-点任务按钮会切到那个应用；按 Esc 收起；再点箭头只收起不重开。
+点任务按钮会切到那个应用；按 Esc 收起；再点箭头只收起不重开。浮层开着时箭头顺时针转过
+半圈、指回任务栏，浮层收完才转回来。
 """
 import importlib.util
 import json
@@ -114,20 +115,36 @@ def main():
         check('先有一个应用在前台', lambda: full()['focusApp'] == first['id'])
         second = next(b for b in buttons if b['id'] != first['id'])
 
+        def turned_back(label):
+            # 浮层还看得见时箭头仍指回任务栏；收完之后才转回原样。
+            end = time.monotonic() + 3
+            while time.monotonic() < end:
+                tray = dump()['tray']
+                assert not (tray['overflowVisible'] and tray['chevronTurn'] < 180), tray['chevronTurn']
+                if not tray['overflowVisible'] and tray['chevronTurn'] == 0:
+                    break
+                time.sleep(0.02)
+            check(label, lambda: not dump()['tray']['overflowVisible'] and dump()['tray']['chevronTurn'] == 0)
+
+        assert dump()['tray']['chevronTurn'] == 0, dump()['tray']['chevronTurn']
         click(dump()['tray']['chevron'])
         check('点箭头打开隐藏的图标', lambda: dump()['tray']['overflowOpen'] and icon()['visible'])
+        check('箭头顺时针转过半圈，指回任务栏', lambda: dump()['tray']['chevronTurn'] == 180)
         before = icon()['y']
         time.sleep(1.2)
         check('图标在浮层里闪烁，浮层保持打开、图标不挪位', lambda: dump()['tray']['overflowOpen'] and
               icon()['y'] == before)
         click(second)
         check('点别处的任务按钮：浮层收起', lambda: not dump()['tray']['overflowOpen'])
+        turned_back('浮层收完，箭头才转回原样')
         check('这一下照样落到任务按钮上，切到了那个应用', lambda: full()['focusApp'] == second['id'])
 
         click(dump()['tray']['chevron'])
         check('再次打开', lambda: dump()['tray']['overflowOpen'])
+        check('再次打开时箭头又转过去', lambda: dump()['tray']['chevronTurn'] == 180)
         escape()
         check('Esc 收起', lambda: not dump()['tray']['overflowOpen'])
+        turned_back('Esc 收起后箭头转回')
 
         click(dump()['tray']['chevron'])
         check('又一次打开', lambda: dump()['tray']['overflowOpen'])
@@ -135,6 +152,7 @@ def main():
         time.sleep(0.5)
         check('再点箭头只收起，不会立刻重开', lambda: not dump()['tray']['overflowOpen'])
         check('收起后浮层不可见，不留下挡点击的透明区', lambda: not dump()['tray']['overflowVisible'])
+        turned_back('再点箭头收起后箭头转回')
     finally:
         for key, value in saved.items():
             setting(key, value)
