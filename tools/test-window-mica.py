@@ -114,7 +114,8 @@ def main():
         check('云母打开', lambda: dump()['mica'] is not None)
         check('已开着、没有应用 ID、但用 GTK 画的窗口也有云母', lambda: record(BACKDROP)['gtk'] and
               record(BACKDROP)['mica'] is not None)
-        open_window(FIRST)
+        # 足够大：上面再开的小窗口和对话框，连同它们的阴影，都落在它的中间。
+        open_window(FIRST, '--size=700x500')
         check('GTK 应用的窗口下方有一块与 frame 同大的云母', lambda: (lambda r, w: r and r['mica'] and
               [r['mica'][k] for k in ('x', 'y', 'w', 'h')] == w['frame'])(record(FIRST), window(FIRST)))
         f, b = window(FIRST)['frame'], window(BACKDROP)['frame']

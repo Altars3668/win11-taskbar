@@ -71,6 +71,9 @@ def main():
         assert desktop['x'] - clock['x'] - clock['w'] == 4
         count += 1
         print('ok 右侧组间留白为实测的 4/8/4px', flush=True)
+        # 测试桌面没有电池：GNOME 会在那里放一个关机图标，Windows 那里什么也没有。
+        check('没有电池：任务栏里没有 GNOME 的关机图标', lambda: dump()['powerIcon'] and
+              not dump()['powerIcon']['battery'] and not dump()['powerIcon']['visible'])
 
         setting('start-layout', "'compact'")
         setting('start-folders', "['files', 'settings']")

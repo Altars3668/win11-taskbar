@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """Win+空格切换输入法，按 Windows 11 的方式；只在隔离 testbed 中运行，用假的 Fcitx。
 
-按住 Win 点空格：任务栏的输入法列表打开并标记下一个；继续点空格往下移，加 Shift 往回；
-松开 Win 切到标记的那个。Esc 取消；快速点按直接切到下一个。
+按住 Win 点空格：任务栏的输入法列表打开并标记下一个，竖条和底色在标记的那一行；继续点空格
+往下移，竖条跟着走，加 Shift 往回；松开 Win 切到标记的那个。Esc 取消；快速点按直接切到下一个。
 """
 import importlib.util
 import json
@@ -66,6 +66,12 @@ def main():
         names = [item['subtitle'] or item['label'] for item in rows if item['marked']]
         return names[0] if names else None
 
+    def lit():
+        """The row with the accent bar and the shade."""
+        rows = [item for item in dump()['items'] if item.get('subtitle') or item['label']]
+        names = [item['subtitle'] or item['label'] for item in rows if item['current']]
+        return names
+
     def name(method_id):
         return next(m['name'] for m in dump()['methods'] if m['id'] == method_id)
 
@@ -82,11 +88,12 @@ def main():
         keys([{'press': SUPER}, {'wait': 40}, {'press': SPACE}, {'wait': 40}, {'release': SPACE}, {'wait': 300}])
         check('按住 Win 点空格：列表打开并标记下一个', lambda: dump()['menuOpen'] and dump()['switching'] and
               marked() == name('rime'))
+        check('竖条和底色在标记的那一行，不留在当前输入法上', lambda: lit() == [name('rime')])
         keys([{'press': SPACE}, {'wait': 40}, {'release': SPACE}, {'wait': 200}])
-        check('再点空格标记再下一个', lambda: marked() == name('pinyin'))
+        check('再点空格标记再下一个，竖条和底色跟着走', lambda: marked() == name('pinyin') and lit() == [name('pinyin')])
         keys([{'press': SHIFT}, {'wait': 30}, {'press': SPACE}, {'wait': 40}, {'release': SPACE},
               {'wait': 30}, {'release': SHIFT}, {'wait': 200}])
-        check('Shift+空格往回标记', lambda: marked() == name('rime'))
+        check('Shift+空格往回标记', lambda: marked() == name('rime') and lit() == [name('rime')])
         keys([{'release': SUPER}, {'wait': 300}])
         check('松开 Win 切到标记的输入法并收起列表', lambda: current() == 'rime' and not dump()['menuOpen'] and
               not dump()['switching'])
