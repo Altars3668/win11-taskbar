@@ -41,7 +41,26 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         page.add(placement);
 
         placement.add(this._combo(settings, 'position', _('Screen edge'),
-            [['bottom', _('Bottom')], ['top', _('Top')]]));
+            [['bottom', _('Bottom')], ['top', _('Top')], ['left', _('Left')],
+             ['right', _('Right')]]));
+        // How thick the bar is: its height along the top or bottom, its
+        // width on a side.
+        const sizeRow = new Adw.SpinRow({
+            title: _('Taskbar height'),
+            subtitle: _('48 is the measured Windows size; the buttons follow it.'),
+            adjustment: new Gtk.Adjustment({
+                lower: 32, upper: 96, step_increment: 2, page_increment: 8,
+            }),
+        });
+        settings.bind('taskbar-size', sizeRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+        placement.add(sizeRow);
+        const syncSizeTitle = () => {
+            const side = ['left', 'right'].includes(settings.get_string('position'));
+            sizeRow.title = side ? _('Taskbar width') : _('Taskbar height');
+        };
+        const positionId = settings.connect('changed::position', syncSizeTitle);
+        this._cleanup.push(() => settings.disconnect(positionId));
+        syncSizeTitle();
         placement.add(this._combo(settings, 'alignment', _('Task button alignment'),
             [['center', _('Centre (Windows 11)')], ['left', _('Left (Windows 10)')]]));
         placement.add(this._switch(settings, 'auto-hide', _('Automatically hide'),

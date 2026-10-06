@@ -3,6 +3,8 @@
   <enum id="org.gnome.shell.extensions.win11-taskbar.position">
     <value value="0" nick="bottom"/>
     <value value="1" nick="top"/>
+    <value value="2" nick="left"/>
+    <value value="3" nick="right"/>
   </enum>
   <enum id="org.gnome.shell.extensions.win11-taskbar.alignment">
     <value value="0" nick="center"/>
@@ -35,7 +37,14 @@
     <key name="position" enum="org.gnome.shell.extensions.win11-taskbar.position">
       <default>'bottom'</default>
       <summary>Taskbar edge</summary>
-      <description>Which screen edge the taskbar sits on.</description>
+      <description>Which screen edge the taskbar sits on. Windows 11 keeps it at the bottom; on the left or right it stands upright and everything opens beside it.</description>
+    </key>
+
+    <key name="taskbar-size" type="i">
+      <range min="32" max="96"/>
+      <default>48</default>
+      <summary>Taskbar thickness</summary>
+      <description>In logical pixels: the bar's height along the top or bottom, its width on a side. 48 is what was measured on Windows; the task buttons and Start follow it.</description>
     </key>
 
     <key name="alignment" enum="org.gnome.shell.extensions.win11-taskbar.alignment">
@@ -253,7 +262,9 @@
       <default>24</default>
       <summary>Task button icon size</summary>
       <description>24 is what was measured on Windows. Larger reads
-      better on a high-density display where the bar looks sparse.</description>
+      better on a high-density display where the bar looks sparse. This is
+      the size on a 48px bar; a thicker or thinner bar (taskbar-size)
+      scales it.</description>
     </key>
 
     <key name="theme" enum="org.gnome.shell.extensions.win11-taskbar.theme">

@@ -49,6 +49,9 @@ export default class Win11TaskbarExtension extends Extension {
             () => this._rebuild());
         this._settingsIds = [
             this._settings.connect('changed::multi-monitor', () => this._rebuild()),
+            // Every menu and flyout takes its side from the bar's edge when
+            // it is made; a bar on another edge is made afresh.
+            this._settings.connect('changed::position', () => this._rebuild()),
             this._settings.connect('changed::hide-top-panel', () => this._syncTopPanel()),
             this._settings.connect('changed::context-menu-on-release',
                 () => this._syncShellMenus()),

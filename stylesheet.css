@@ -293,6 +293,32 @@
     border-left: 1px solid rgba(255, 255, 255, 0.10);
 }
 
+/* A bar standing on a side: what runs across the bar along the top or the
+   bottom runs down it here. */
+.w11-taskbar-vertical .w11-zone-left {
+    padding-left: 0;
+    padding-top: 6px;
+}
+
+.w11-taskbar-vertical .w11-clock {
+    padding: 6px 0;
+}
+
+.w11-taskbar-vertical .w11-show-desktop {
+    border-left: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.w11-taskbar-vertical.dark .w11-show-desktop {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.w11-taskbar-vertical .w11-system-indicator .system-status-icon,
+.w11-taskbar-vertical .w11-system-indicator StIcon {
+    margin: 4px 0;
+}
+
 /* --------------------------------------------------------- preview flyout */
 
 .w11-preview {

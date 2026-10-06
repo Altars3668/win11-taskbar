@@ -23,6 +23,17 @@ on the screen midpoint, not in the space between the other two. Left
 alignment (Windows 10 style) is a setting. The bar reserves its space like a
 real panel, or hides against the edge behind a pressure barrier.
 
+The bar may sit on any of the four edges, which Windows 11 does not allow.
+On the left or right it stands upright: the buttons run down it, centred,
+the running indicators stand upright against the screen edge, the tray
+and the system glyphs stack, and the clock drops the year when the date
+does not fit. Everything opens on the bar's inner side — Start beside it,
+centred down the screen; quick settings and the notification centre in the
+corner at the bar's far end; thumbnails, jump lists, Win+X and the hidden
+icons beside what opened them — and slides in from the bar. Its thickness
+is a setting too (32 to 96, 48 measured): the task buttons, Start and
+their icons follow it, the tray's small glyphs do not.
+
 **Click semantics.** These are the whole point, and they live in
 [`lib/clickSemantics.js`](lib/clickSemantics.js) as a pure function so they
 can be read in one screen and tested without a compositor:
@@ -350,6 +361,7 @@ gdbus call --session --dest org.gnome.Shell.Extensions.Win11Taskbar \
 
 Where only real input will do, `Trigger` also takes `pointer:<steps>` and
 plays them through a Clutter virtual pointer — `{"move": [x, y]}`,
+`{"by": [dx, dy]}` (relative, for pushing against a pressure barrier),
 `{"press": 3}`, `{"release": 3}`, `{"wait": ms}`. That is what the
 context-menu tests use, because GTK's menus react to events, not to API
 calls:
@@ -368,6 +380,7 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-tray-overflow.py # a blinking tray icon, and the overflow's light dismiss
 /usr/bin/python3 tools/test-attention.py  # a window asking for attention flashes its button
 /usr/bin/python3 tools/test-input-switch.py # Win+Space: the list, Space onward, release to choose
+/usr/bin/python3 tools/test-edges.py      # the bar on each edge, at 64 and 32px, and what opens from it
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
 node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
@@ -410,6 +423,7 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 | `lib/trayArea.js` | The notification area and its overflow. |
 | `lib/systemIndicators.js` | Borrowing GNOME's Quick Settings in. |
 | `lib/panel.js` | The surface, the three zones, struts, theming. |
+| `lib/barEdge.js` | Which side things open on, wherever the bar is. Pure geometry, unit-tested. |
 | `lib/autoHide.js` | Sliding out of the way behind a pressure barrier. |
 | `lib/shellMenus.js` | GNOME Shell's own right-click menus, switched to open on release. |
 | `lib/shellShutdown.js` | Knowing the shell is exiting, so teardown leaves GNOME's objects alone. |

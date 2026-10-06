@@ -33,7 +33,7 @@ app.connect('activate', () => {
         return row;
     };
     const pages = [];
-    for (const method of ['_startPage', '_trayPage']) {
+    for (const method of ['_layoutPage', '_startPage', '_trayPage']) {
         const original = prefs[method].bind(prefs);
         prefs[method] = value => {
             const page = original(value);
@@ -99,10 +99,22 @@ app.connect('activate', () => {
             settings.reset('start-layout');
             settings.reset('start-width');
             settings.reset('start-height');
+            // 任务栏粗细：上下放置叫“高度”，左右放置叫“宽度”，数值直接写入设置。
+            const thickness = spins.find(row => ['Taskbar height', 'Taskbar width'].includes(row.title));
+            if (!thickness || thickness.title !== 'Taskbar height')
+                throw new Error('没有任务栏高度数字框');
+            settings.set_string('position', 'left');
+            if (thickness.title !== 'Taskbar width')
+                throw new Error('放到左侧后数字框没有改叫宽度');
+            thickness.value = 64;
+            if (settings.get_int('taskbar-size') !== 64)
+                throw new Error('任务栏粗细没有写入设置');
+            settings.reset('position');
+            settings.reset('taskbar-size');
             window.close();
             if (prefs._cleanup.length !== 0)
                 throw new Error('关闭偏好窗口后仍保留设置/总线监听');
-            print('偏好窗口、按程序名折叠、入口选择、开始菜单自定义大小与关闭清理检查通过，0 项失败');
+            print('偏好窗口、按程序名折叠、入口选择、开始菜单自定义大小、任务栏粗细与关闭清理检查通过，0 项失败');
         } catch (error) {
             failure = error;
             printerr(error.stack);
