@@ -10,6 +10,7 @@ import GLib from 'gi://GLib';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
+import {AttentionToasts} from './lib/attentionToasts.js';
 import {DebugService} from './lib/debugService.js';
 import {NotificationPersistence} from './lib/notificationPersistence.js';
 import {setGettext as setMenuGettext} from './lib/dbusMenu.js';
@@ -62,6 +63,7 @@ export default class Win11TaskbarExtension extends Extension {
         this._syncShellMenus();
         this._windowMotion = new WindowMotion();
         this._notificationPersistence = new NotificationPersistence();
+        this._attentionToasts = new AttentionToasts();
         this._rebuild();
         this._syncTopPanel();
 
@@ -94,6 +96,8 @@ export default class Win11TaskbarExtension extends Extension {
         this._windowMotion = null;
         this._notificationPersistence?.destroy();
         this._notificationPersistence = null;
+        this._attentionToasts?.destroy();
+        this._attentionToasts = null;
 
         this._statusHost?.destroy();
         this._statusHost = null;

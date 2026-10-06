@@ -146,6 +146,12 @@
     icon-size: 16px;
 }
 
+/* A logo, not a glyph: drawn at the task icons' size, as Windows draws its
+   own and Ubuntu's dock its Show Apps button. */
+.w11-start-icon {
+    icon-size: 24px;
+}
+
 .w11-task-icon {
     /* Measured: 24x24 nominal, centred in the 44x48 cell. */
     icon-size: 24px;
@@ -199,6 +205,17 @@
 
 .w11-task-button:focus .w11-task-plate {
     border: 2px solid rgb(0, 120, 212);
+}
+
+/* An app asking for attention: Windows 11 flashes a light red backplate
+   behind its button, then leaves it lit until the window is used. */
+.w11-task-flash {
+    border-radius: 4px;
+    background-color: rgba(232, 17, 35, 0.2);
+}
+
+.dark .w11-task-flash {
+    background-color: rgba(255, 99, 99, 0.3);
 }
 
 /* Windows hints at a second window with a stacked plate behind the button. */
@@ -865,16 +882,63 @@
     -barlevel-background-color: rgba(0, 0, 0, 0.16);
     -barlevel-border-color: transparent;
     -barlevel-border-width: 0;
-    -barlevel-active-background-color: rgb(0, 120, 212);
+    -barlevel-active-background-color: rgb(0, 95, 184);
     -barlevel-active-border-color: transparent;
-    -slider-handle-radius: 7px;
+    /* GNOME's handle keeps its geometry and is painted in no colour:
+       lib/sliderThumb.js draws Windows' thumb where it would be. */
+    -slider-handle-radius: 10px;
     -slider-handle-border-width: 0;
     -slider-handle-border-color: transparent;
-    color: #ffffff;
+    color: transparent;
 }
 
 .w11-flyout.dark .slider {
     -barlevel-background-color: rgba(255, 255, 255, 0.20);
+    -barlevel-active-background-color: rgb(96, 205, 255);
+}
+
+/* Windows 11's thumb: a white disc with a hairline edge and an accent dot
+   that grows under the pointer and shrinks while held. */
+.w11-slider-thumb {
+    /* 20px across with the hairline: St sizes the content box. */
+    width: 18px;
+    height: 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+.w11-flyout.dark .w11-slider-thumb {
+    border-color: rgba(255, 255, 255, 0.094);
+    background-color: #454545;
+}
+
+.w11-slider-thumb-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: rgb(0, 95, 184);
+}
+
+.w11-flyout.dark .w11-slider-thumb-dot {
+    background-color: rgb(96, 205, 255);
+}
+
+/* The value while the thumb is dragged, as Windows shows it. */
+.w11-slider-tip {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+    background-color: rgba(249, 249, 249, 0.96);
+    color: #1a1a1a;
+    font-size: 12px;
+}
+
+.w11-slider-tip.dark {
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(44, 44, 44, 0.96);
+    color: #ffffff;
 }
 
 /* A tile's sub-page — the Wi-Fi list, audio outputs, the power menu. */
@@ -1584,6 +1648,7 @@
 /* The quick settings edit control, and what edit mode looks like. */
 .w11-qs-editor {
     padding-top: 4px;
+    spacing: 1px;
 }
 
 .w11-qs-edit-button {
@@ -1591,22 +1656,202 @@
     padding: 6px;
 }
 
-/* In edit mode the tiles stop being controls and become choices, so they
-   are dimmed to say so — and the ones currently off the panel are dimmed
-   further, with a dashed edge, to show they would be added back. */
-.w11-qs-editing .quick-toggle,
-.w11-qs-editing .quick-toggle-has-menu,
-.w11-qs-editing .quick-slider {
-    opacity: 0.75;
+/* Edit mode, measured off Windows 11's panel: every tile is drawn as a
+   disabled control — its card in ControlFillColorDisabled, or
+   AccentFillColorDisabled where it is on, its glyph and its label in
+   TextFillColorDisabled — and hovering it changes nothing. */
+.w11-flyout.w11-qs-editing .w11-quick-tile .w11-quick-card,
+.w11-flyout.w11-qs-editing .w11-quick-tile:hover .w11-quick-card {
+    background-color: rgba(249, 249, 249, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+    color: rgba(0, 0, 0, 0.3614);
 }
 
-.w11-qs-editing .w11-qs-tile-hidden {
-    opacity: 0.4;
-    border: 1px dashed rgba(0, 0, 0, 0.3);
+.w11-flyout.w11-qs-editing .w11-quick-tile:checked .w11-quick-card,
+.w11-flyout.w11-qs-editing .w11-quick-tile:checked:hover .w11-quick-card {
+    background-color: rgba(0, 0, 0, 0.2169);
+    border: 1px solid transparent;
+    color: #ffffff;
 }
 
-.w11-flyout.dark .w11-qs-editing .w11-qs-tile-hidden {
-    border: 1px dashed rgba(255, 255, 255, 0.3);
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile .w11-quick-card,
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile:hover .w11-quick-card {
+    background-color: rgba(255, 255, 255, 0.0419);
+    border: 1px solid rgba(255, 255, 255, 0.0698);
+    color: rgba(255, 255, 255, 0.3628);
+}
+
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile:checked .w11-quick-card,
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile:checked:hover .w11-quick-card {
+    background-color: rgba(255, 255, 255, 0.1581);
+    border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.5302);
+}
+
+.w11-flyout.w11-qs-editing .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile {
+    color: rgba(0, 0, 0, 0.3614);
+}
+
+.w11-flyout.dark.w11-qs-editing .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile {
+    color: rgba(255, 255, 255, 0.3628);
+}
+
+/* The tile being dragged is lifted out of the grey: drawn as it is
+   outside edit mode. */
+.w11-flyout.w11-qs-editing .w11-quick-tile.w11-qs-dragging .w11-quick-card,
+.w11-flyout.w11-qs-editing .w11-quick-tile.w11-qs-dragging:hover .w11-quick-card {
+    background-color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(0, 0, 0, 0.0588);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.161);
+    color: #1a1a1a;
+}
+
+.w11-flyout.w11-qs-editing .w11-quick-tile.w11-qs-dragging:checked .w11-quick-card,
+.w11-flyout.w11-qs-editing .w11-quick-tile.w11-qs-dragging:checked:hover .w11-quick-card,
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile.w11-qs-dragging:checked .w11-quick-card,
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile.w11-qs-dragging:checked:hover .w11-quick-card {
+    background-color: #0067c0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+    color: #ffffff;
+}
+
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile.w11-qs-dragging .w11-quick-card,
+.w11-flyout.dark.w11-qs-editing .w11-quick-tile.w11-qs-dragging:hover .w11-quick-card {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.0706);
+    border-top: 1px solid rgba(255, 255, 255, 0.094);
+    color: #ffffff;
+}
+
+.w11-flyout.w11-qs-editing .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile.w11-qs-dragging {
+    color: #1a1a1a;
+}
+
+.w11-flyout.dark.w11-qs-editing .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile.w11-qs-dragging {
+    color: #ffffff;
+}
+
+/* Unpin: 20px round, white with the glyph in black; under the pointer the
+   other way round. */
+.w11-qs-unpin {
+    /* 20px across with the hairline: St sizes the content box. */
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+    background-color: #ffffff;
+    color: rgba(0, 0, 0, 0.8956);
+}
+
+.w11-qs-unpin:hover,
+.w11-qs-unpin:focus {
+    border-color: transparent;
+    background-color: rgba(0, 0, 0, 0.8956);
+    color: #ffffff;
+}
+
+.w11-qs-unpin:active {
+    background-color: rgba(0, 0, 0, 0.62);
+}
+
+.w11-flyout.dark .w11-qs-unpin {
+    border-color: rgba(255, 255, 255, 0.0698);
+    background-color: #3a3a3a;
+    color: #ffffff;
+}
+
+.w11-flyout.dark .w11-qs-unpin:hover,
+.w11-flyout.dark .w11-qs-unpin:focus {
+    border-color: transparent;
+    background-color: #ffffff;
+    color: rgba(0, 0, 0, 0.8956);
+}
+
+.w11-flyout.dark .w11-qs-unpin:active {
+    background-color: rgba(255, 255, 255, 0.78);
+}
+
+.w11-qs-unpin-icon {
+    icon-size: 12px;
+}
+
+/* The sliders are disabled too: the filled track and the thumb's dot in
+   AccentFillColorDisabled, the glyphs beside them in TextFillColorDisabled. */
+.w11-flyout.w11-qs-editing .slider {
+    -barlevel-active-background-color: rgba(0, 0, 0, 0.2169);
+}
+
+.w11-flyout.dark.w11-qs-editing .slider {
+    -barlevel-active-background-color: rgba(255, 255, 255, 0.1581);
+}
+
+.w11-flyout.w11-qs-editing .w11-slider-thumb-dot {
+    background-color: rgba(0, 0, 0, 0.2169);
+}
+
+.w11-flyout.dark.w11-qs-editing .w11-slider-thumb-dot {
+    background-color: rgba(255, 255, 255, 0.1581);
+}
+
+.w11-flyout.w11-qs-editing .quick-slider,
+.w11-flyout.w11-qs-editing .quick-slider .icon-button {
+    color: rgba(0, 0, 0, 0.3614);
+}
+
+.w11-flyout.dark.w11-qs-editing .quick-slider,
+.w11-flyout.dark.w11-qs-editing .quick-slider .icon-button {
+    color: rgba(255, 255, 255, 0.3628);
+}
+
+/* Done and Add, centred at the foot in place of its usual row: a glyph
+   and a word, flat until the pointer is on them. Their height is the edit
+   button's, so the panel keeps its size. */
+.w11-qs-edit-action {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 4px;
+    background: none;
+    color: rgba(0, 0, 0, 0.8956);
+}
+
+.w11-qs-edit-action-box {
+    spacing: 10px;
+}
+
+.w11-qs-edit-action-icon {
+    icon-size: 16px;
+}
+
+.w11-qs-edit-action:hover,
+.w11-qs-edit-action:focus {
+    background-color: rgba(0, 0, 0, 0.0373);
+}
+
+.w11-qs-edit-action:active {
+    background-color: rgba(0, 0, 0, 0.0241);
+}
+
+.w11-qs-edit-action:insensitive {
+    color: rgba(0, 0, 0, 0.3614);
+}
+
+.w11-flyout.dark .w11-qs-edit-action {
+    color: #ffffff;
+}
+
+.w11-flyout.dark .w11-qs-edit-action:hover,
+.w11-flyout.dark .w11-qs-edit-action:focus {
+    background-color: rgba(255, 255, 255, 0.0605);
+}
+
+.w11-flyout.dark .w11-qs-edit-action:active {
+    background-color: rgba(255, 255, 255, 0.0419);
+}
+
+.w11-flyout.dark .w11-qs-edit-action:insensitive {
+    color: rgba(255, 255, 255, 0.3628);
 }
 
 /* 材质只绘制一次，下面的借用原生内容层不再叠加底色或第二圈阴影。 */
@@ -1663,16 +1908,9 @@
 .w11-flyout.dark .w11-switch:checked .w11-switch-knob { background-color: #000000; }
 .w11-quick-footer { spacing: 4px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
 .w11-quick-footer .quick-settings-system-item { background: none; padding: 0; margin: 0; border: none; }
-.w11-quick-footer-action, .w11-quick-footer .w11-qs-edit-button { padding: 8px; border-radius: 4px; background: none; color: inherit; }
-.w11-quick-footer-action:hover { background-color: rgba(0,0,0,0.06); }
-.dark .w11-quick-footer-action:hover { background-color: rgba(255,255,255,0.08); }
-.w11-quick-edit-list { spacing: 6px; }
-.w11-quick-edit-description { font-size: 11px; padding-bottom: 8px; }
-.w11-quick-edit-row { padding: 10px 8px; border-radius: 4px; background: none; color: inherit; }
-.w11-quick-edit-row StBoxLayout { spacing: 10px; }
-.w11-quick-edit-row:hover { background-color: rgba(0,0,0,0.06); }
-.dark .w11-quick-edit-row:hover { background-color: rgba(255,255,255,0.08); }
-.w11-quick-edit-done { padding: 8px 16px; margin-top: 8px; border-radius: 4px; background-color: #0067c0; color: #ffffff; }
+.w11-quick-footer .w11-qs-edit-button { padding: 8px; border-radius: 4px; background: none; color: inherit; }
+.w11-quick-footer .w11-qs-edit-button:hover { background-color: rgba(0,0,0,0.06); }
+.dark .w11-quick-footer .w11-qs-edit-button:hover { background-color: rgba(255,255,255,0.08); }
 
 /* ------------------------------------------------- Quick Link menu (Win+X) */
 

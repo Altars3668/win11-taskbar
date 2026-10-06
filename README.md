@@ -352,6 +352,10 @@ tools/test-edge-context-menu.py # Edge, with a throwaway profile, one --case at 
 /usr/bin/python3 tools/test-shell-menu-passthrough.py # a right click outside a shell menu still lands
 /usr/bin/python3 tools/test-notification-centre.py # dismissing, opening, Clear all, notifications kept
 /usr/bin/python3 tools/test-wifi-flow.py  # joining a network in place, against a recorder
+/usr/bin/python3 tools/test-quick-edit.py # quick settings edited in place: unpin, drag, Add, Done
+/usr/bin/python3 tools/test-slider-thumb.py # the sliders' Windows thumb, on a slider that moves nothing
+/usr/bin/python3 tools/test-tray-overflow.py # a blinking tray icon, and the overflow's light dismiss
+/usr/bin/python3 tools/test-attention.py  # a window asking for attention flashes its button
 /usr/bin/python3 tools/test-shortcuts.py  # key ownership and recovery after logout
 node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering tests
 ```
@@ -362,14 +366,18 @@ node tools/test-ui-lifecycle.mjs          # lifecycle models, not rendering test
 |---|---|
 | `lib/spec.js` | Every measured Windows number. The single source of truth. |
 | `lib/clickSemantics.js` | What a gesture means. Pure, no actors, unit-tested. |
-| `lib/windows.js` | Which windows a button represents, and in what order. |
-| `lib/taskButton.js` | One button: icon, indicator, input. |
+| `lib/windows.js` | Which windows a button represents, and in what order; a window GNOME cannot place goes to the app whose process started it. |
+| `lib/taskButton.js` | One button: icon, indicator, input, and the flashing of an app that asks for attention. |
+| `lib/attentionToasts.js` | GNOME's "is ready" notification, unhooked: Windows flashes the button instead. |
 | `lib/taskList.js` | The strip, kept in sync with pinned and running apps. |
 | `lib/windowPreview.js` | The thumbnail flyout and Aero Peek. |
 | `lib/jumpList.js` | The right-click menu. |
 | `lib/shellButtons.js` | Start, Task View, clock, show-desktop. |
 | `lib/glyphs.js` | The Windows-shaped icons, drawn with cairo. |
 | `lib/systemFlyouts.js` | Quick settings and the notification centre. |
+| `lib/quickSettingsEditor.js` | Editing quick settings in place: Unpin, drag to reorder, Add, Done. |
+| `lib/quickTileLayout.js` | Quick settings tiles in Windows' shape. |
+| `lib/sliderThumb.js` | The sliders' thumb, as Windows draws it. |
 | `lib/theme.js` | Light/dark, followed or pinned. |
 | `lib/motion.js` | Durations and curves, and reduce-motion. |
 | `lib/quickLinks.js` | The Win+X menu. |

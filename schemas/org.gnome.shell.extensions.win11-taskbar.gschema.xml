@@ -330,6 +330,14 @@
       with the top bar hidden these have to live here.</description>
     </key>
 
+    <key name="flash-attention" type="b">
+      <default>true</default>
+      <summary>Show flashing on taskbar apps</summary>
+      <description>An app whose window asks for attention flashes its
+      taskbar button seven times and keeps it lit until the window is used,
+      as Windows does, instead of GNOME's "is ready" notification.</description>
+    </key>
+
     <key name="quick-settings-editable" type="b">
       <default>true</default>
       <summary>Allow editing the quick settings panel</summary>
@@ -342,6 +350,14 @@
       <summary>Quick settings tiles removed from the panel</summary>
       <description>Keyed by the tile's class and title. Edit the panel
       from its own edit button rather than by hand.</description>
+    </key>
+
+    <key name="quick-settings-order" type="as">
+      <default>[]</default>
+      <summary>The order of the quick settings tiles</summary>
+      <description>Keyed as quick-settings-hidden is. Tiles not listed come
+      after the rest. Drag the tiles in the panel's edit mode rather than
+      editing this by hand.</description>
     </key>
 
     <key name="tray-hidden-items" type="as">

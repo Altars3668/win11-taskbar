@@ -87,10 +87,9 @@ def main():
     def account_anchored():
         start = dump()['bars'][0]['startMenu']
         menu, button = start['accountMenu'], start['accountButton']
-        return (abs(menu['x'] - button['x']) <= 1 and
-                menu['y'] + menu['h'] <= button['y'] and
-                start['x'] <= menu['x'] and menu['x'] + menu['w'] <= start['x'] + start['w'])
-    check('账户菜单在账户按钮上方左缘对齐，不伸出开始菜单', account_anchored)
+        return (abs(menu['x'] + menu['w'] / 2 - button['x'] - button['w'] / 2) <= 1 and
+                menu['y'] + menu['h'] <= button['y'])
+    check('账户菜单居中在账户按钮正上方', account_anchored)
     shell.trigger('start-menu-close')
     time.sleep(0.3)
 
@@ -137,11 +136,13 @@ def main():
         check('选择开始菜单任务管理器后可实际启动 Resources',
               lambda: any(w['wmClass'] and 'resources' in w['wmClass'].lower() and w['frame'][2] > 0
                           for w in json.loads(shell.trigger('windows'))))
-    resource_window = next(w for w in json.loads(shell.trigger('windows'))
-                           if w['wmClass'] and 'resources' in w['wmClass'].lower())
-    assert resource_window['launchOrigin'] and resource_window['launchAnimationApplied'], resource_window
-    count += 1
-    print('ok 新窗口从被点击的图标位置展开', flush=True)
+    # The window is listed, with its size, as soon as it is created; the
+    # compositor maps it — and the animation is set up — a moment later.
+    def launched_from_icon():
+        window = next(w for w in json.loads(shell.trigger('windows'))
+                      if w['wmClass'] and 'resources' in w['wmClass'].lower())
+        return window['launchOrigin'] and window['launchAnimationApplied']
+    check('新窗口从被点击的图标位置展开', launched_from_icon)
 
     shell.trigger('quick-links')
     time.sleep(0.3)

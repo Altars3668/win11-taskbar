@@ -13,6 +13,8 @@
  * private directory named by IconThemePath, the title is empty and only the
  * tooltip names the app. --late registers with the watcher before the item
  * is exported, as a racing app can, so the host's first read finds nothing.
+ * --blink swaps the icon and says so every 300 ms, as WeChat does while a
+ * message is unread.
  */
 
 import Gio from 'gi://Gio';
@@ -23,6 +25,7 @@ const iconName = ARGV[1] ?? 'dialog-information-symbolic';
 const notifyOnAbout = ARGV.includes('--notify-about');
 const late = ARGV.includes('--late');
 const themePath = ARGV.includes('--theme-path');
+const blink = ARGV.includes('--blink');
 let aboutCount = 0;
 let layoutCount = 0;
 let revision = 1;
@@ -185,5 +188,15 @@ Gio.bus_own_name(Gio.BusType.SESSION, busName, Gio.BusNameOwnerFlags.NONE,
             });
     },
     () => printerr(`lost the bus name ${busName}`));
+
+if (blink) {
+    let lit = true;
+    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
+        lit = !lit;
+        item.IconName = lit ? iconName : 'dialog-warning-symbolic';
+        itemImpl.emit_signal('NewIcon', null);
+        return GLib.SOURCE_CONTINUE;
+    });
+}
 
 new GLib.MainLoop(null, false).run();

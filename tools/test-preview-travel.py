@@ -6,6 +6,8 @@
 """
 import importlib.util
 import json
+import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -80,6 +82,35 @@ def main():
         check('浮窗从原处平移过去，途中经过两按钮之间', len(between) >= 2, samples)
     shell.pointer([{'move': [960, 500]}, {'wait': 500}])
     check('离开后预览关闭', wait(lambda: not preview()['open']))
+
+    # Aero Peek between two windows of one app, quickly, with a third window
+    # faded all along: it must come back fully, not stop where the first
+    # peek's restore had got to.
+    editor = next(b for b in dump()['buttons'] if b['id'] == 'org.gnome.TextEditor.desktop')
+    if editor['windows'] < 2:
+        env = dict(os.environ, XDG_CONFIG_HOME=f'{ctx.RUN}/config', XDG_CACHE_HOME=f'{ctx.RUN}/config/cache',
+                   XDG_DATA_HOME=f'{ctx.RUN}/app-data', WAYLAND_DISPLAY='w11test',
+                   DBUS_SESSION_BUS_ADDRESS=shell.address)
+        env.pop('DISPLAY', None)
+        proc = subprocess.Popen(['gnome-text-editor', '--standalone'], env=env, start_new_session=True,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        with open(f'{ctx.RUN}/app-pids', 'a') as pids:
+            pids.write(f'{proc.pid}\n')
+        wait(lambda: next(b for b in dump()['buttons']
+                          if b['id'] == 'org.gnome.TextEditor.desktop')['windows'] >= 2, 10)
+        shell.trigger('windows')
+        time.sleep(1)
+    editor = next(b for b in dump()['buttons'] if b['id'] == 'org.gnome.TextEditor.desktop')
+    shell.pointer([{'move': [centre(editor), y]}, {'wait': 900}])
+    thumbs = dump()['preview']
+    check('同一应用两个窗口时预览有两张缩略图', thumbs['thumbnails'] >= 2, thumbs)
+    left = thumbs['x'] + thumbs['w'] * 0.3
+    right = thumbs['x'] + thumbs['w'] * 0.7
+    middle = thumbs['y'] + thumbs['h'] / 2
+    shell.pointer([{'move': [left, middle]}, {'wait': 60}, {'move': [right, middle]}, {'wait': 60},
+                   {'move': [left, middle]}, {'wait': 60}, {'move': [960, 400]}, {'wait': 700}])
+    others = [w for w in json.loads(shell.trigger('windows')) if w['wmClass'] and 'calculator' in w['wmClass'].lower()]
+    check('Aero Peek 来回切换后其他窗口完全复原', others and all(w['opacity'] == 255 for w in others), others)
     print(f'{count} 项预览转移检查通过，0 项失败')
 
 

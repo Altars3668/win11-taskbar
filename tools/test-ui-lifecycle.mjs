@@ -28,6 +28,8 @@ class Actor {
     set_pivot_point(x, y) { this.pivot = [x, y]; }
     set_position(x, y) { this.x = x; this.y = y; }
     set_scale(x, y) { this.scale = [x, y]; }
+    remove_transition() {}
+    remove_all_transitions() {}
     ease(params) { this.lastEase = params; }
 }
 function load(file, exports, extra = {}) {
@@ -71,11 +73,14 @@ check('停用后保留原生动态添加的节点', () => {
 check('停用后恢复原列数和跨度', () => {
     assert.equal(grid.layout_manager.nColumns, 2); assert.equal(metas.get(tile).columnSpan, 2);
 });
+check('停用后 GNOME 的标签不再带着编辑态的缩放', () => {
+    assert.deepEqual(labels.scale, [1, 1]); assert.deepEqual(labels.pivot, [0, 0]);
+});
 
 const mapping = new Set();
 const {WindowMotion} = load('windowMotion.js', ['WindowMotion'], {
     GLib: {get_monotonic_time: () => 100}, Meta: {WindowType: {NORMAL: 0}},
-    Shell: {WindowTracker: {get_default: () => ({get_window_app: w => w.app})}},
+    Windows: {windowApp: w => w.app},
     Main: {wm: {_mapping: mapping}}, global: {window_manager: {connect_after: () => 1, disconnect() {}}},
 });
 const app = {get_id: () => 'app', get_n_windows: () => 1};

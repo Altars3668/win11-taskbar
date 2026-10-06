@@ -191,6 +191,10 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('Fades the other windows out, as Aero Peek does.')));
         group.add(this._switch(settings, 'jumplist-recent',
             _('Show recent documents in the jump list')));
+        group.add(this._switch(settings, 'flash-attention',
+            _('Show flashing on taskbar apps'),
+            _('An app that needs attention flashes its button instead of '
+              + 'showing GNOME’s “is ready” notification.')));
 
         const shortcuts = new Adw.PreferencesGroup({
             title: _('Windows shortcuts'),

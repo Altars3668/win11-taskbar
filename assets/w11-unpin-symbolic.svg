@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+ <!-- Windows' Unpin glyph: a pin leaning right, head up, struck through
+      between head and collar. Filled paths only, so that the shell
+      recolours it like any symbolic icon. -->
+ <defs>
+  <clipPath id="gap">
+   <path clip-rule="evenodd" d="M-2 -2H18V18H-2Z M0.92 -0.92 L16.92 15.08 L15.08 16.92 L-0.92 0.92Z"/>
+  </clipPath>
+ </defs>
+ <g transform="translate(-0.85 0.85)">
+  <g clip-path="url(#gap)">
+   <path fill-rule="evenodd" transform="rotate(45 8 8)" d="M6 1h4a1 1 0 0 1 1 1v4.7H5V2a1 1 0 0 1 1-1Z M6.2 2.2v3.3h3.6V2.2Z M5.5 9.3h5v1h-5Z M7.5 10.3h1V15h-1Z"/>
+  </g>
+  <path d="M2.354 1.646 14.354 13.646 13.646 14.354 1.646 2.354Z"/>
+ </g>
+</svg>
