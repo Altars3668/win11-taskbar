@@ -46,7 +46,7 @@ class PackageTests(unittest.TestCase):
             names = z.namelist()
             for required in ('metadata.json', 'extension.js', 'prefs.js', 'stylesheet.css',
                              'schemas/gschemas.compiled', 'lib/panel.js', 'assets/window-shadow.png',
-                             'LICENSE', 'README.md', 'README.zh-CN.md'):
+                             'LICENSE', 'README.md', 'README.en.md', 'README.zh-CN.md'):
                 self.assertIn(required, names)
             self.assertTrue(z.read('schemas/gschemas.compiled'))
             self.assertEqual(z.testzip(), None)

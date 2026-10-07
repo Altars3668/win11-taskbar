@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TOP_LEVEL = ('metadata.json', 'extension.js', 'prefs.js', 'stylesheet.css',
-             'LICENSE', 'README.md', 'README.zh-CN.md')
+             'LICENSE', 'README.md', 'README.en.md', 'README.zh-CN.md')
 DIRECTORIES = {
     'lib': {'.js'},
     'schemas': {'.xml', '.compiled'},

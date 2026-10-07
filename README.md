@@ -1,181 +1,105 @@
-# Windows 11 Taskbar for GNOME Shell
+# win11-taskbar · GNOME 的 Windows 11 风格任务栏
 
-**English** · [简体中文](README.zh-CN.md)
+**简体中文** | [English](README.en.md)
+
+为 **GNOME Shell 50** 提供任务栏、开始菜单、搜索、系统托盘、快捷设置、通知中心和窗口贴靠的独立扩展。这个项目不只是换图标或主题：我按真实 Windows 11 的布局和交互测量，重做了应用按钮、窗口浮层、系统图标和贴靠操作，同时保留 GNOME 的网络、音频、亮度和电源后端。
+
+> 不是 Microsoft 产品、Windows 兼容层或 GNOME 本体 fork。扩展包不会替换 GTK、Mutter 或内核；系统级右键行为补丁是另外的可选组件。
 
 [![Build](https://github.com/Altars3668/win11-taskbar/actions/workflows/build.yml/badge.svg)](https://github.com/Altars3668/win11-taskbar/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/Altars3668/win11-taskbar)](https://github.com/Altars3668/win11-taskbar/releases/latest)
-[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 
-A Windows 11-style taskbar for **GNOME Shell 50**, with a Start menu, configurable search, live window previews, a system tray, quick settings, and snap layouts. Layout and interaction timings are based on measurements from a real Windows 11 machine, not just screenshots remembered from Windows.
+## 我的实现与特色
 
-This is an independent GNOME extension, not a Microsoft product and not a Windows compatibility layer. It keeps GNOME's network, audio, brightness and power backends rather than replacing them.
-
-## Highlights
-
-| Area | Features |
+| 方向 | 已实现内容 |
 | --- | --- |
-| Taskbar | Centered or left-aligned applications; pinned and running apps; per-workspace filtering; multi-monitor support; auto-hide; all four screen edges |
-| Start and search | Pinned apps, app folders, recent documents, account and power menus; hidden, icon, icon + label, or search-box styles |
-| Windows | Live thumbnail previews, Aero Peek, jump lists, attention flashing, Windows-style open/minimize/restore animations, rounded corners and shadows |
-| Snap layouts | `Super+Z`, maximize-button hover, drag-to-top layouts, edge/corner snapping, and snap assist |
-| Tray | StatusNotifierItem/DBusMenu support, per-app overflow selection, rotating overflow chevron, optional hover menus |
-| System controls | **One combined network/volume/battery button**, quick-settings subpages, connected toggle/arrow controls, volume and brightness sliders |
-| Notifications | Notification cards and calendar, separate from quick settings; clipboard history; GNOME and Fcitx 5 input switching |
-| Show desktop | A visible separator at the end of the taskbar, click-to-minimize/restore, and hover-to-peek |
-| Appearance | Light/dark themes, acrylic surfaces, configurable taskbar thickness; optional GTK title bars and Mica |
+| **任务栏布局与应用行为** | 居中 / 左对齐、固定及运行应用、四条屏幕边缘、粗细、自动隐藏、多显示器 / 工作区；按钮按窗口数量和聚焦状态执行启动、激活、最小化或打开预览。 |
+| **开始与搜索** | 固定应用、应用文件夹、最近文档、账户 / 电源菜单；搜索支持隐藏、图标、图标加文字和搜索框。 |
+| **窗口预览与效果** | 实时缩略图、Aero Peek、跳转列表、注意闪烁、打开 / 关闭 / 最小化 / 还原动画、圆角与阴影。 |
+| **统一的贴靠体验** | `Super+Z`、最大化按钮悬停、顶部布局条、边缘 / 角落贴靠及 snap assist，使用一致的预览。 |
+| **托盘与系统图标** | StatusNotifierItem / DBusMenu、逐应用溢出选择、箭头随浮层开合旋转；网络 / 音量 / 电池共用一个按钮和悬停背景。 |
+| **快捷设置与通知分离** | 开关与箭头连接式卡片、功能子页、音量 / 亮度滑条；通知卡片与日历独立，不再与快捷设置混在同一面板。 |
+| **输入与桌面操作** | GNOME / Fcitx 5 输入切换、剪贴板历史、显示桌面分隔线及点击 / 悬停行为。 |
+| **可选 GTK 外观** | 用户主动开启后设置 Windows 风格标题栏和 Mica，关闭时移除自己的 CSS 块并恢复布局，不默认接管系统库。 |
+| **系统右键行为补丁** | 独立的 GTK 3 / 4 与 Mutter 补丁处理“松开才弹”和“点外关闭但点击仍送达”；仅装扩展不意味着这些补丁已安装。 |
+| **测量与回归** | 保存 Windows 测量、独立 GNOME 测试桌面与可重复安装 ZIP 的校验；区分纯逻辑、打包和完整 UI 的证据。 |
 
-### Familiar mouse behavior
+实现与行为边界见 [docs/behavior.md](docs/behavior.md)、[docs/windows-spec.md](docs/windows-spec.md) 和 [patches/README.md](patches/README.md)。
 
-| Gesture | Result |
-| --- | --- |
-| Click an app that is not running | Launch it |
-| Click a single unfocused window | Activate it |
-| Click a single focused window | Minimize it |
-| Click an app with several windows | Open its thumbnail flyout |
-| `Ctrl` + click | Cycle through the app's windows |
-| `Shift` + click or middle-click | Open another window |
-| Right-click | Open the jump list |
+## 兼容性
 
-Network, volume and battery share one hover/pressed background, as on Windows 11. In quick settings, the toggle and its arrow share a connected card: the left side toggles the feature and the arrow opens its subpage. A desktop without a battery has no substitute power-off icon in the taskbar.
+- 声明支持 **GNOME Shell 50**，不把 48 / 49 当作已经验证的兼容版本。
+- 主要测试环境是 Wayland，窗口框回归也包含 Xwayland；硬件相关控制取决于 GNOME 服务提供的能力。
+- 没有电池的桌面不补放一个关机图标；系统图标合并规则与 Windows 11 的交互模型保持一致。
+- 扩展不能改变所有应用内部的右键菜单。GTK / Mutter 补丁另行评估、构建和安装，会影响系统 GUI，应留回滚方案。
 
-## Requirements and compatibility
+## 安装
 
-- **GNOME Shell 50**. This release declares only the version validated by the project. GNOME 48/49 are not claimed as supported.
-- Wayland is the primary test environment. Xwayland windows are also covered by the window-frame tests.
-- Standard GNOME services provide audio, networking, brightness, notifications and power controls. Hardware-dependent controls only appear when those services expose them.
-- This extension does not install or replace GTK, Mutter or the Linux kernel. Optional native patches are documented separately in [`patches/README.md`](patches/README.md).
+### 使用已发布 ZIP
 
-## Install
+从 [Releases](https://github.com/Altars3668/win11-taskbar/releases) 下载与目标 GNOME 版本匹配的 `win11-taskbar@altarscn.com.shell-extension.zip` 和 `SHA256SUMS`。当前已有 `v0.1.0`；源分支文档更新不会改写该标签或重新发布旧产物。
 
-### From a release — recommended
-
-1. Download `win11-taskbar@altarscn.com.shell-extension.zip` and `SHA256SUMS` from [the latest GitHub release](https://github.com/Altars3668/win11-taskbar/releases/latest).
-2. In the download directory, verify and install:
-
-   ```bash
-   sha256sum --check SHA256SUMS
-   gnome-extensions install --force win11-taskbar@altarscn.com.shell-extension.zip
-   ```
-
-3. **Log out and log back in**, then enable the extension:
-
-   ```bash
-   gnome-extensions enable win11-taskbar@altarscn.com
-   ```
-
-On Wayland, logging back in lets GNOME discover a newly installed extension and load updated JavaScript. The project does not automatically restart your desktop or close your applications.
-
-### From source
-
-```bash
-git clone https://github.com/Altars3668/win11-taskbar.git
-cd win11-taskbar
-make install
-# Log out and log back in before enabling a newly installed extension.
+```sh
+sha256sum --check SHA256SUMS
+gnome-extensions install --force win11-taskbar@altarscn.com.shell-extension.zip
+# 注销并重新登录后启用；不要在工作中强行重启桌面
 gnome-extensions enable win11-taskbar@altarscn.com
 ```
 
-Source installation needs `make` and `glib-compile-schemas` (on Debian/Ubuntu: `libglib2.0-bin`). The release ZIP already includes compiled settings schemas.
+### 从源码安装
 
-### Avoid conflicting extensions
-
-Only one extension should draw the main taskbar and only one service can own `org.kde.StatusNotifierWatcher`.
-
-- Avoid running this extension together with Dash to Panel, Dash to Dock or Ubuntu Dock.
-- Disable AppIndicator Support / Ubuntu AppIndicators if you want this taskbar to own the tray.
-- **Tiling Assistant:** while it is enabled, screen-edge dragging stays with it. Disable it to use this extension's unified edge-snap previews and snap assist.
-- **Blur my Shell:** popup blur can interfere with this extension's rounded acrylic surfaces. Disable its popup blur or the extension if you see black corners.
-
-For source installs, the optional switch-over helper previews its changes first:
-
-```bash
-tools/enable.sh          # Preview conflicting extensions.
-tools/enable.sh --apply  # Disable those extensions and record what changed.
-tools/disable.sh        # Restore the recorded extensions.
+```sh
+git clone https://github.com/Altars3668/win11-taskbar.git
+cd win11-taskbar
+make install
+# 新安装或更新 JavaScript 后，注销并重新登录
+gnome-extensions enable win11-taskbar@altarscn.com
 ```
 
-## Settings
+需要 `make` 和 `glib-compile-schemas`（Debian / Ubuntu 的 `libglib2.0-bin`）。安装 / 启用是用户主动操作，本文档维护不重启或修改正在使用的桌面。
 
-Open the Extensions app or run:
+## 冲突与设置
 
-```bash
+主任务栏与 `org.kde.StatusNotifierWatcher` 都只能有一个主要提供方：
+
+- 避免与 Dash to Panel、Dash to Dock、Ubuntu Dock 同时使用；如由本扩展管理托盘，应停用其他 AppIndicator 实现。
+- Tiling Assistant 启用时保留它的边缘拖动处理；停用后才由本扩展统一接管。
+- Blur my Shell 的弹出层模糊可能造成圆角黑边，出现时关闭对应模糊选项。
+- `tools/enable.sh` 默认仅预览切换，`--apply` 才改变冲突扩展；`tools/disable.sh` 可恢复记录。先读脚本再执行。
+
+```sh
 gnome-extensions prefs win11-taskbar@altarscn.com
 ```
 
-Configure the screen edge, alignment, thickness (32–96 px), auto-hide, search style, visible elements, tray overflow, Start layout/folders, themes, shortcuts, window effects and per-monitor/per-workspace behavior.
+设置覆盖布局、对齐、粗细、搜索、托盘、开始菜单、主题、快捷键和窗口效果。GTK 标题栏 / Mica 默认关闭；开启会改用户 GTK CSS 和窗口按钮布局，现有应用通常需重启。GTK 3 无法按应用深色主题区分 Mica 强度，属于明确限制。
 
-**GTK title bars and Mica are opt-in.** GTK title-bar styling adds a marked block to your GTK 3/4 user CSS and changes the GNOME window-button layout; disabling it removes that block and restores the saved layout. Existing applications usually need restarting to pick up the style. Mica additionally requires GTK title-bar styling. GTK 3 cannot distinguish application dark themes in CSS, so its Mica strength uses the light setting.
+## 常用快捷键
 
-## Keyboard shortcuts
-
-`Super` is the Windows/logo key on most keyboards.
-
-| Shortcut | Action |
+| 快捷键 | 作用 |
 | --- | --- |
-| `Super` | Start menu, when enabled |
-| `Super+Z` | Snap layouts |
-| `Super+A` | Quick settings |
-| `Super+N` | Notification center |
-| `Super+Space` / `Shift+Super+Space` | Next / previous input method |
-| `Super+X` | Quick Link menu |
-| `Super+V` | Clipboard history |
-| `Super+D` | Show desktop |
-| `Super+E` / `Super+I` / `Super+R` | Files / Settings / Run |
-| `Super+T` / `Super+1…9` | Step through / activate taskbar buttons |
+| `Super` / `Super+Z` | 开始 / 贴靠布局。 |
+| `Super+A` / `Super+N` | 快捷设置 / 通知中心。 |
+| `Super+X` / `Super+V` | 快速链接 / 剪贴板历史。 |
+| `Super+D` | 显示桌面。 |
+| `Super+Space` / `Shift+Super+Space` | 下一 / 上一输入法。 |
+| `Super+E` / `Super+I` / `Super+R` | 文件 / 设置 / 运行。 |
+| `Super+T` / `Super+1…9` | 遍历 / 激活任务栏应用。 |
 
-Bindings taken over by the extension are restored when it is disabled. Some shortcuts are configurable or can be turned off.
+停用扩展会恢复接管的绑定；部分快捷键可关闭。鼠标的 `Ctrl+点击` 循环窗口，`Shift+点击` / 中键打开新窗口，右键打开跳转列表。
 
-## Build, test and release
+## 构建与验证
 
-This extension is JavaScript/GJS, CSS and assets: cloud “compilation” means compiling GSettings schemas and building the installable ZIP, not building GNOME or native GTK packages.
-
-```bash
-make check           # Syntax, pure logic, schemas and app-name ordering; no test desktop.
-make test-package    # Archive layout, checksums, determinism and packaging safety.
-make pack            # dist/*.shell-extension.zip and dist/SHA256SUMS.
+```sh
+make check         # 语法、纯逻辑、schema、应用排序；不启动桌面
+make test-package  # ZIP 结构、双语文档、校验和、确定性与打包安全
+make pack          # dist/ 下的安装 ZIP 与 SHA256SUMS
 ```
 
-Local checks need Node.js 22+, Python 3, GJS, `glib-compile-schemas`, and an ICU `uconv` binary. On Debian/Ubuntu, install `gjs`, `libglib2.0-bin` and `icu-devtools` in addition to Node/Python.
+需要 Node.js 22+、Python 3、GJS、`glib-compile-schemas`、ICU `uconv`。源码包打包时同时包含中文首页、英文版与旧中文入口，不让安装 ZIP 的语言切换链接断掉。
 
-For rendered interaction tests on a compatible GNOME 50 workstation:
+[GitHub Actions](.github/workflows/build.yml) 做可移植检查与打包，**不等于 GNOME 50 的完整图形验收**。独立无头 UI 测试及模拟网络 / 音频控制见 [docs/development.md](docs/development.md)；它们与真实设备或桌面效果的验证分开。新版本 Release 需更新 `metadata.json` 并推匹配的版本标签。
 
-```bash
-tools/test-ui.sh
-TESTBED_MODE=ubuntu tools/test-ui.sh
-```
+## 已知限制与来源
 
-These tests use a separate headless shell, session bus, runtime directory and settings. Test Wi-Fi and audio controls are synthetic; the tests do not join a real network or adjust your real volume. See [development and testing](docs/development.md).
+不宣称每个 Windows 版本逐像素一致；没有新闻 / 小组件或每日搜索图片，未实现拖动重排任务栏应用按钮。最大化按钮悬停只识别适配的 GTK、Chromium / Electron 等几何布局，其他自绘标题栏不保证有效；建议贴靠分组和某些拖动效果也未完全复刻。
 
-### GitHub Actions
-
-[The build workflow](.github/workflows/build.yml) runs on pushes to `main`, pull requests, version tags and manual dispatch:
-
-1. Check syntax and pure logic, and compile the settings schemas.
-2. Test and build a deterministic installable ZIP with a SHA-256 checksum.
-3. Upload the ZIP/checksum as Actions artifacts.
-4. On a `v*` tag, publish a GitHub Release with those same files. The tag must match `metadata.json`'s `version-name`.
-
-Hosted CI validates the portable build, not the GNOME 50 graphical testbed. Release notes state that distinction; local full-UI regressions are checked separately. Publishing another version requires updating `version` and `version-name`, committing, and pushing the matching tag.
-
-## Known limits
-
-- This is a Windows-inspired desktop experience, not a pixel-identical reproduction of every Windows build. Some material colors and dark-mode snap previews are approximations.
-- There is no Windows widgets/news panel or daily search-highlight image. Taskbar search opens the extension's Start search, or GNOME search when the extension's Start menu is off.
-- Drag-to-reorder **taskbar app buttons** is not implemented. Quick-settings tiles do support their own edit and reorder mode.
-- Maximize-button hover depends on app-drawn button geometry. GTK apps with the optional title-bar style, Chromium and Electron are recognized; other toolkits/custom title bars are not guaranteed.
-- System-wide release-timed context menus require the optional GTK/Mutter patches; the extension alone cannot rewrite application-owned menus.
-- Windows' suggested snap groups, top-edge peek strip and dragged-window shrinking are not reproduced.
-
-## Documentation and project links
-
-- [简体中文使用说明](README.zh-CN.md)
-- [Detailed behavior](docs/behavior.md)
-- [Development, testbed and source map](docs/development.md)
-- [Windows measurements](docs/windows-spec.md)
-- [Rendering validation](docs/rendering-validation.md)
-- [Optional native patches](patches/README.md)
-- [GitHub releases](https://github.com/Altars3668/win11-taskbar/releases) · [Gitea source](https://git.altarscn.com/Geoffrey/win11-taskbar)
-
-## License
-
-[GPL-3.0-or-later](LICENSE), consistent with GNOME Shell. Windows and Microsoft are trademarks of their respective owners; this project is not affiliated with or endorsed by Microsoft.
+本项目由 Altars3668 维护，利用 GNOME / GJS 的系统接口而不是复制 Windows 实现。采用 [GPL-3.0-or-later](LICENSE)，保留各组件授权声明；Microsoft / Windows 商标属于相应权利人，没有官方隶属或背书关系。
