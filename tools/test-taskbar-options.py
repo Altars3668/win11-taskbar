@@ -74,15 +74,16 @@ def main():
         # 测试桌面没有电池：GNOME 会在那里放一个关机图标，Windows 那里什么也没有。
         check('没有电池：任务栏里没有 GNOME 的关机图标', lambda: dump()['powerIcon'] and
               not dump()['powerIcon']['battery'] and not dump()['powerIcon']['visible'])
-        # 网络、音量、电池各是一个按钮：指针下的那个单独高亮。
+        # Windows 的网络、音量、电池共用一个按钮，内部图标不单独高亮。
         glyphs = dump()['systemGlyphs']
         assert glyphs, dump()['systemIndicators']
         g = glyphs[0]
         shell.pointer([{'move': [g['x'] + g['w'] / 2, g['y'] + g['h'] / 2]}, {'wait': 300}])
-        check('指针下的系统图标单独高亮，各自是 40px 高的格子', lambda: (lambda gs: gs[0]['hover'] and
-              not any(x['hover'] for x in gs[1:]) and all(x['h'] == 40 for x in gs))(dump()['systemGlyphs']))
+        check('指针下的系统图标使整组合并高亮', lambda: dump()['systemButtonHover'] and
+              int(dump()['systemButton']['background'][-2:], 16) > 0 and
+              all(not x['hover'] for x in dump()['systemGlyphs']))
         shell.pointer([{'move': [960, 500]}, {'wait': 300}])
-        check('移开后都不高亮', lambda: not any(x['hover'] for x in dump()['systemGlyphs']))
+        check('移开后整组不高亮', lambda: not dump()['systemButtonHover'])
 
         setting('start-layout', "'compact'")
         setting('start-folders', "['files', 'settings']")

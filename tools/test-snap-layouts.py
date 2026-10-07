@@ -140,8 +140,10 @@ def main():
         if on:
             enabled = enabled + [ASSISTANT] if ASSISTANT not in enabled else enabled
             disabled = [u for u in disabled if u != ASSISTANT]
-        gsettings('set', 'org.gnome.shell', 'disabled-extensions', repr(disabled))
+        # Ubuntu 会话本来就包含它：先保留禁用门，更新显式启用列表，再移除禁用。
+        # 反过来会在异步 enable() 尚未结束时第二次进入，重复注册托盘角色。
         gsettings('set', 'org.gnome.shell', 'enabled-extensions', repr(enabled))
+        gsettings('set', 'org.gnome.shell', 'disabled-extensions', repr(disabled))
 
     try:
         gsettings('reset', 'org.gnome.shell.extensions.win11-taskbar', 'snap-layouts')

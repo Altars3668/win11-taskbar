@@ -15,6 +15,7 @@ gjs -m "$ROOT/tools/test-application-order.js"
 "$ROOT/tools/testbed.sh" apps
 "$ROOT/tools/testbed.sh" verify
 /usr/bin/python3 "$ROOT/tools/test-taskbar-options.py"
+/usr/bin/python3 "$ROOT/tools/test-controls.py"
 /usr/bin/python3 "$ROOT/tools/test-dbusmenu-storm.py"
 /usr/bin/python3 "$ROOT/tools/test-quick-pages.py"
 /usr/bin/python3 "$ROOT/tools/test-quick-edit.py"

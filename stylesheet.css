@@ -341,14 +341,17 @@
     padding-top: 1px;
 }
 
-/* Measured: a 12px sliver at the far right. */
+/* 显示桌面仍是实测的 12px 窄区；分隔线在静止、悬停和按下时都可见。 */
 .w11-show-desktop {
-    border-left: 1px solid rgba(0, 0, 0, 0.10);
     border-radius: 0;
 }
 
-.dark .w11-show-desktop {
-    border-left: 1px solid rgba(255, 255, 255, 0.10);
+.w11-show-desktop-line {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.dark .w11-show-desktop-line {
+    background-color: rgba(255, 255, 255, 0.30);
 }
 
 /* A bar standing on a side: what runs across the bar along the top or the
@@ -360,16 +363,6 @@
 
 .w11-taskbar-vertical .w11-clock {
     padding: 6px 0;
-}
-
-.w11-taskbar-vertical .w11-show-desktop {
-    border-left: none;
-    border-top: 1px solid rgba(0, 0, 0, 0.10);
-}
-
-.w11-taskbar-vertical.dark .w11-show-desktop {
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .w11-taskbar-vertical .w11-system-indicator .system-status-icon,
@@ -641,20 +634,14 @@
     spacing: 0;
 }
 
-/* 控制区内的 24px 图标单元之间也留出实测的 4px。每个图标单独悬停高亮（40px 高、
-   上下各留 4px）；快捷设置开着时整组保持按下的样子，因为点哪个都打开同一个面板。 */
+/* Windows 将网络、音量、电池作为一个按钮：共享悬停与按下背景。
+   内部 24px 图标单元之间保留实测的 4px 留白。 */
 .w11-system-indicator .panel-button > .panel-status-indicators-box { spacing: 4px; }
 .w11-system-indicator .panel-button { border-radius: 4px; transition-duration: 0ms; }
-.w11-system-indicator .panel-button:hover { background: none; }
+.w11-system-indicator .panel-button:hover,
 .w11-system-indicator .panel-button:active { background-color: rgba(0, 0, 0, 0.06); }
+.dark .w11-system-indicator .panel-button:hover,
 .dark .w11-system-indicator .panel-button:active { background-color: rgba(255, 255, 255, 0.08); }
-.w11-system-indicator .w11-system-glyph {
-    min-height: 40px;
-    border-radius: 4px;
-}
-.w11-system-indicator .w11-system-glyph:hover { background-color: rgba(0, 0, 0, 0.06); }
-.dark .w11-system-indicator .w11-system-glyph:hover { background-color: rgba(255, 255, 255, 0.08); }
-.w11-system-indicator .panel-button:active .w11-system-glyph:hover { background: none; }
 
 /* ------------------------------------------------------- system flyouts */
 
@@ -848,7 +835,8 @@
     background: none;
     background-color: transparent;
     border: none;
-    box-shadow: none;
+    border-radius: 0;
+    box-shadow: none !important;
 }
 
 .w11-flyout .quick-settings-grid .w11-quick-tile.w11-quick-tile.w11-quick-tile {
@@ -919,6 +907,33 @@
     min-height: 0;
     min-width: 0;
     height: 46px;
+}
+
+/* 主按钮与箭头共用填色、外框和焦点框，仅以两端留空的内部分隔线区分动作区。 */
+.w11-flyout .w11-quick-split {
+    spacing: 0;
+}
+
+.w11-flyout .w11-quick-split .quick-toggle-separator {
+    width: 1px;
+    margin: 8px 0;
+    background-color: rgba(0, 0, 0, 0.16);
+}
+
+.w11-flyout.dark .w11-quick-split .quick-toggle-separator {
+    background-color: rgba(255, 255, 255, 0.16);
+}
+
+.w11-flyout .w11-quick-tile:checked .w11-quick-split .quick-toggle-separator {
+    background-color: rgba(255, 255, 255, 0.28);
+}
+
+.w11-flyout .w11-quick-card:focus {
+    box-shadow: inset 0 0 0 2px rgba(0, 103, 192, 0.70);
+}
+
+.w11-flyout .w11-quick-tile:checked .w11-quick-card:focus {
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
 }
 
 /* Measured: the card splits down the middle, and the chevron is Windows'
