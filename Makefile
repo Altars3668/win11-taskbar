@@ -35,6 +35,10 @@ check:
 	node tools/test-layout-options.mjs
 	node tools/test-ui-lifecycle.mjs
 	node tools/test-peek-state.mjs
+	node tools/test-recommendations.mjs
+	node tools/test-adaptive-layout.mjs
+	node tools/test-mica-target.mjs
+	gjs -m tools/test-recent-documents.js
 	glib-compile-schemas --strict --dry-run schemas/
 	gjs -m tools/test-application-order.js
 

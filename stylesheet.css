@@ -1247,6 +1247,11 @@
     border-radius: 6px;
 }
 
+.w11-task-scroll { padding: 0; margin: 0; }
+.w11-search-scopes { spacing: 8px; }
+.w11-search-scopes .w11-start-allapps:checked { font-weight: bold; }
+.w11-search-panel-content { spacing: 12px; }
+
 /* ------------------------------------------------------------ Start menu */
 
 /* NOTE: these proportions are measured, but from an Insider build whose

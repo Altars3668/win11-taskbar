@@ -30,7 +30,7 @@ def main():
                DBUS_SESSION_BUS_ADDRESS=shell.address)
     schema = 'org.gnome.shell.extensions.win11-taskbar'
     command = ['gsettings', '--schemadir', str(HERE.parent / 'schemas')]
-    keys = ['position', 'taskbar-size', 'auto-hide', 'alignment', 'tray-hidden-items', 'tray-hover']
+    keys = ['position', 'taskbar-size', 'taskbar-size-mode', 'auto-hide', 'alignment', 'tray-hidden-items', 'tray-hover']
     count = 0
 
     def setting(key, value):
@@ -237,6 +237,7 @@ def main():
 
         setting('position', "'bottom'")
         check('回到底边', lambda: dump()['edge'] == 'bottom' and rect(dump()['panel']) == (0, H - 48, W, 48))
+        setting('taskbar-size-mode', "'manual'")
         for size, cell, icon in ((64, 60, 32), (32, 28, 16)):
             setting('taskbar-size', str(size))
             check(f'{size}px：任务栏、工作区随之改变', lambda: rect(dump()['panel']) == (0, H - size, W, size) and

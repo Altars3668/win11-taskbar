@@ -33,7 +33,7 @@ app.connect('activate', () => {
         return row;
     };
     const pages = [];
-    for (const method of ['_layoutPage', '_startPage', '_trayPage']) {
+    for (const method of ['_layoutPage', '_startPage', '_trayPage', '_behaviourPage']) {
         const original = prefs[method].bind(prefs);
         prefs[method] = value => {
             const page = original(value);
@@ -45,11 +45,14 @@ app.connect('activate', () => {
     window.present();
     const switches = [];
     const spins = [];
+    const entries = [];
     const walk = widget => {
         if (widget instanceof Adw.SwitchRow)
             switches.push(widget);
         if (widget instanceof Adw.SpinRow)
             spins.push(widget);
+        if (widget instanceof Adw.EntryRow)
+            entries.push(widget);
         for (let child = widget.get_first_child(); child; child = child.get_next_sibling())
             walk(child);
     };
@@ -57,6 +60,7 @@ app.connect('activate', () => {
     GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
         switches.length = 0;
         spins.length = 0;
+        entries.length = 0;
         pages.forEach(walk);
         switches.push(...madeSwitches);
         const tray = switches.find(row => row.title === 'Test item (tray-alpha)');
@@ -106,15 +110,43 @@ app.connect('activate', () => {
             settings.set_string('position', 'left');
             if (thickness.title !== 'Taskbar width')
                 throw new Error('放到左侧后数字框没有改叫宽度');
+            settings.set_string('taskbar-size-mode', 'manual');
+            if (!thickness.sensitive) throw new Error('手动模式不能调节粗细');
             thickness.value = 64;
             if (settings.get_int('taskbar-size') !== 64)
                 throw new Error('任务栏粗细没有写入设置');
+            settings.set_string('taskbar-size-mode', 'auto');
+            if (thickness.sensitive) throw new Error('自动模式仍允许改手动粗细');
+            const recommended = switches.find(row => row.title === 'Show Recommended');
+            if (!recommended) throw new Error('没有推荐总开关');
+            recommended.active = false;
+            if (settings.get_boolean('recommended-enabled')) throw new Error('推荐开关没有生效');
+            recommended.active = true;
+            const days = spins.find(row => row.title === 'Recent access window (days)');
+            const limit = spins.find(row => row.title === 'Maximum recommended items');
+            if (!days || !limit) throw new Error('缺少推荐日期或数量控件');
+            days.value = 7; limit.value = 12;
+            if (settings.get_int('recommended-days') !== 7 || settings.get_int('recommended-limit') !== 12)
+                throw new Error('推荐数字控件没有写入设置');
+            const extensions = entries.find(row => row.title.startsWith('Filename extensions'));
+            const shortcut = entries.find(row => row.title.startsWith('Search shortcut'));
+            if (!extensions || !shortcut) throw new Error('缺少扩展名或搜索快捷键控件');
+            extensions.text = 'PDF, .tex';
+            if (settings.get_strv('recommended-extensions').join(',') !== 'pdf,tex')
+                throw new Error('扩展名没有正确规范化');
+            extensions.text = '..invalid';
+            if (!extensions.has_css_class('error') || settings.get_strv('recommended-extensions').join(',') !== 'pdf,tex')
+                throw new Error('无效扩展名覆盖了旧设置');
+            shortcut.text = '<Super>f';
+            if (settings.get_strv('search-key')[0] !== '<Super>f') throw new Error('快捷键控件没有写入设置');
+            settings.set_strv('recommended-include-directories', ['/tmp/w11-test-allowed']);
+            settings.set_strv('recommended-exclude-directories', ['/tmp/w11-test-excluded']);
             settings.reset('position');
             settings.reset('taskbar-size');
             window.close();
             if (prefs._cleanup.length !== 0)
                 throw new Error('关闭偏好窗口后仍保留设置/总线监听');
-            print('偏好窗口、按程序名折叠、入口选择、开始菜单自定义大小、任务栏粗细与关闭清理检查通过，0 项失败');
+            print('偏好窗口、托盘/Start 入口、自定义/自动尺寸、推荐过滤、快捷键与关闭清理检查通过，0 项失败');
         } catch (error) {
             failure = error;
             printerr(error.stack);

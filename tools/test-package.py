@@ -46,6 +46,9 @@ class PackageTests(unittest.TestCase):
             names = z.namelist()
             for required in ('metadata.json', 'extension.js', 'prefs.js', 'stylesheet.css',
                              'schemas/gschemas.compiled', 'lib/panel.js', 'assets/window-shadow.png',
+                             'lib/searchPanel.js', 'lib/applicationSearch.js', 'lib/adaptiveLayout.js',
+                             'lib/recentDocuments.js', 'lib/recommendationPolicy.js', 'lib/indicatorIcons.js',
+                             'lib/peekState.js', 'lib/windowPeek.js', 'lib/micaTarget.js',
                              'LICENSE', 'README.md', 'README.en.md', 'README.zh-CN.md'):
                 self.assertIn(required, names)
             self.assertTrue(z.read('schemas/gschemas.compiled'))
@@ -105,6 +108,8 @@ class PackageTests(unittest.TestCase):
                                 env=dict(os.environ, GSETTINGS_BACKEND='memory'))
         self.assertIn('search-style', result.stdout.splitlines())
         self.assertIn('snap-layouts', result.stdout.splitlines())
+        for key in ('search-key', 'taskbar-size-mode', 'recommended-enabled', 'recommended-exclude-directories'):
+            self.assertIn(key, result.stdout.splitlines())
 
 
 if __name__ == '__main__':

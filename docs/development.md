@@ -1,6 +1,6 @@
 # Development, testing and releases
 
-[English README](../README.md) · [简体中文说明](../README.zh-CN.md) · [Behavior](behavior.md)
+[English README](../README.en.md) · [简体中文说明](../README.md) · [Behavior](behavior.md)
 
 ## Portable checks
 
@@ -20,7 +20,7 @@ make test-package
 make pack
 ```
 
-`make check` parses extension modules without resolving their `gi://` imports, tests pure click/layout/lifecycle logic, validates schemas, and checks application-name ordering through ICU. It does not start a desktop or touch the user's settings.
+`make check` parses extension modules without resolving their `gi://` imports, tests pure click/layout/lifecycle logic, validates schemas, checks application-name ordering through ICU, and exercises the shared asynchronous XBEL reader against temporary files/symlinks, including unknown access timestamps. It does not start a desktop or touch the user's settings.
 
 `make test-package` checks the installable ZIP's layout, compiled schema, required resources, SHA-256 checksum, reproducibility, tag/version agreement and rejection of symbolic links. Output goes to isolated temporary directories.
 
@@ -60,6 +60,7 @@ Useful environment variants:
 TESTBED_MONITOR=3840x2160 TESTBED_SCALE=2 tools/testbed.sh start
 TESTBED_MONITOR=3840x2160 TESTBED_SCALE=2 TESTBED_LOGICAL=1 tools/testbed.sh start
 TESTBED_ANIMATIONS=1 tools/testbed.sh start
+TESTBED_MONITOR=1920x1080 TESTBED_SECOND_MONITOR=1280x720 tools/testbed.sh start
 ```
 
 The logical-monitor variant reproduces a 2× display while keeping stage coordinates logical. The other variant checks integer-scaled stage geometry. Avoid other heavy GPU workloads while running rendered tests.
@@ -72,7 +73,10 @@ The logical-monitor variant reproduces a 2× display while keeping stage coordin
 | `tools/test-controls.py` | Three-icon shared hover, visible desktop divider, connected quick-toggle/arrow geometry and actions |
 | `tools/test-quick-pages.py` | Native subpages, return navigation, account/power integration |
 | `tools/test-quick-edit.py` | Unpin, Add, drag reorder, editing and focus |
-| `tools/test-search.py` | Four search styles and light/dark hover |
+| `tools/test-search.py` | Manual search styles, light/dark hover and independent panel activation |
+| `tools/test-search-recommendations.py` | Real keyboard search, Start independence, scope/filter separation, recommendation refresh and four-edge placement |
+| `tools/test-adaptive-ui.py` | Automatic/manual size, Start columns, 50 isolated app fixtures, bounded overflow and actual wheel/shortcut reveal |
+| `tools/test-multi-monitor-search.py` | 1080p + 720p virtual monitors, per-monitor size, search placement and cross-monitor grab cleanup |
 | `tools/test-edges.py` | All screen edges and taskbar sizes |
 | `tools/test-snap-layouts.py` | Keyboard/mouse layouts, maximize hover, edge dragging, assist and Tiling Assistant handoff |
 | `tools/test-window-frames.py` | Frame, shadow and Xwayland rendering |
@@ -92,7 +96,7 @@ With `debug-service` enabled, the extension exposes:
 
 `Screenshot()` returns before its output stream has necessarily finished writing. Wait for a new file with a stable, nonzero size before doing pixel comparisons; do not reuse a previous screenshot accidentally.
 
-Input scripts use `pointer:<JSON>` or `keys:<JSON>`. Pointer steps support `move`, relative `by`, `press`, `release` and `wait`. They are asynchronous. Tests must wait for expected state or settled geometry before clicking an animated target and release any held buttons in cleanup.
+Input scripts use `pointer:<JSON>` or `keys:<JSON>`. Pointer steps support `move`, relative `by`, `press`, `release`, discrete `scroll` directions and `wait`. They are asynchronous. Tests must wait for expected state or settled geometry before clicking an animated target and release any held buttons in cleanup.
 
 ## Source map
 
@@ -102,7 +106,10 @@ Input scripts use `pointer:<JSON>` or `keys:<JSON>`. Pointer steps support `move
 | `clickSemantics.js`, `applicationOrder.js` | Gesture decisions and application ordering |
 | `panel.js`, `taskList.js`, `taskButton.js`, `shellButtons.js` | Taskbar layout and buttons |
 | `windowPreview.js`, `jumpList.js`, `attentionToasts.js` | App previews, menus and attention feedback |
-| `startMenu.js`, `startPins.js`, `startOptions.js` | Start behavior, pins and layouts |
+| `startMenu.js`, `startPins.js`, `startOptions.js`, `adaptiveLayout.js` | Start behavior, pins and pure automatic layouts |
+| `searchPanel.js`, `applicationSearch.js`, `searchMatch.js`, `launcherPanels.js` | Independent local search, shared matching/launch and cross-monitor exclusivity |
+| `recentDocuments.js`, `recommendationPolicy.js` | Asynchronous local recent snapshot and pure Start recommendation filters |
+| `peekState.js`, `windowPeek.js`, `micaTarget.js`, `indicatorIcons.js` | Shared opacity ownership and pure material/network classifications |
 | `statusNotifier.js`, `dbusMenu.js`, `trayArea.js` | Native Linux tray protocols and overflow |
 | `systemIndicators.js`, `systemFlyouts.js` | Reuse of GNOME indicators and menus |
 | `quickTileLayout.js`, `quickSettingsEditor.js`, `sliderThumb.js` | Connected cards, editing and slider appearance |

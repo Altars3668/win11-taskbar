@@ -136,6 +136,10 @@ do_start() {
     glib-compile-schemas "$ROOT/schemas" || return 1
 
     local preload="" mode_arg="" disabled="[]"
+    if [[ -n "${TESTBED_SECOND_MONITOR:-}" && ! "$TESTBED_SECOND_MONITOR" =~ ^[0-9]+x[0-9]+$ ]]; then
+        printf 'invalid second virtual monitor size\n'
+        return 1
+    fi
     if [ -n "${TESTBED_MODE:-}" ]; then
         mode_arg="--mode=$TESTBED_MODE"
         # 该模式默认启用的扩展（Dock、AppIndicator 等）在测试里一律关掉。
@@ -166,6 +170,7 @@ gsettings --schemadir "$ROOT/schemas" set \
 ${TESTBED_LD_LIBRARY_PATH:+export LD_LIBRARY_PATH="$TESTBED_LD_LIBRARY_PATH"}
 $preload
 exec gnome-shell --headless --virtual-monitor ${TESTBED_MONITOR:-1920x1080} \
+    ${TESTBED_SECOND_MONITOR:+--virtual-monitor $TESTBED_SECOND_MONITOR} \
     --wayland-display $DISPLAY_NAME $mode_arg${TESTBED_ANIMATIONS:+ --force-animations}
 INNER
     chmod +x "$RUN/inner.sh"

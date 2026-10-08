@@ -2,6 +2,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {wiredIndicatorIcon} from '../lib/indicatorIcons.js';
+import {matchesQuery} from '../lib/searchMatch.js';
+import {closeOtherLaunchers, registerLauncher} from '../lib/launcherPanels.js';
 
 class Actor {
     constructor(...args) {
@@ -11,6 +14,7 @@ class Actor {
     }
     _init(params = {}) { Object.assign(this, params); this.styles = new Set((params.style_class ?? '').split(' ')); }
     get_children() { return [...this.children]; }
+    get_n_children() { return this.children.length; }
     get_first_child() { return this.children[0]; }
     get_parent() { return this.parent; }
     add_child(child) { assert(!child.parent); this.children.push(child); child.parent = this; }
@@ -113,4 +117,54 @@ motion.destroy();
 check('停用不抹掉其他扩展后来附加的动画包装', () => assert.equal(c.ease, later));
 c.ease({opacity: 255, scale_x: 1, scale_y: 1, duration: 240});
 check('停用后的包装只转发，不再改变起点', () => assert.equal(c._w11LaunchAnimationApplied, undefined));
+class Icon extends Actor {
+    get icon_name() { return this.name; }
+    set icon_name(value) {
+        if (this.name === value) return;
+        this.name = value;
+        for (const {signal, cb} of this.handlers.values()) {
+            if (signal === 'notify::icon-name') cb();
+        }
+    }
+}
+const nativeParent = new Actor();
+const quickSettings = new Actor();
+quickSettings.container = quickSettings;
+quickSettings._indicators = new Actor();
+const wired = new Icon({icon_name: 'network-wired-symbolic'});
+quickSettings._network = {_primaryIndicator: wired};
+nativeParent.add_child(quickSettings);
+const {SystemIndicators} = load('systemIndicators.js', ['SystemIndicators'], {
+    Main: {panel: {statusArea: {quickSettings}}}, wiredIndicatorIcon,
+});
+const borrowed = new SystemIndicators(new Actor(), null);
+check('借用时替换正常有线图标，不递归通知', () => assert.equal(wired.icon_name, 'computer-symbolic'));
+for (const name of ['network-wired-acquiring-symbolic', 'network-wired-no-route-symbolic',
+    'network-wired-disconnected-symbolic', 'network-wireless-signal-excellent-symbolic', 'network-vpn-symbolic']) {
+    wired.icon_name = name;
+    check(`动态状态保持 ${name}`, () => assert.equal(wired.icon_name, name));
+}
+wired.icon_name = 'network-wired-symbolic';
+borrowed.destroy();
+check('停用恢复最新原生图标与原来的父节点', () => {
+    assert.equal(wired.icon_name, 'network-wired-symbolic');
+    assert.equal(quickSettings.get_parent(), nativeParent);
+    assert.equal(wired.handlers.size, 0);
+});
+check('搜索匹配 Unicode、重音与跨字段多词', () => {
+    assert(matchesQuery('终端 shell', ['终端', 'Shell emulator']));
+    assert(matchesQuery('cafe', ['Café']));
+    assert(!matchesQuery('missing', ['Calculator']));
+});
+const first = {close: () => first.closed = true};
+const second = {close: () => second.closed = true};
+const unregisterFirst = registerLauncher(first), unregisterSecond = registerLauncher(second);
+closeOtherLaunchers(second);
+check('跨任务栏启动面板只关闭其他已注册面板', () => {
+    assert(first.closed); assert.equal(second.closed, undefined);
+});
+unregisterFirst(); unregisterSecond();
+first.closed = false;
+closeOtherLaunchers(null);
+check('销毁的启动面板不会被再次调用', () => assert.equal(first.closed, false));
 console.log(`${passed} 项生命周期检查通过，0 项失败`);

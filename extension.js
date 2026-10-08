@@ -16,6 +16,7 @@ import {NotificationPersistence} from './lib/notificationPersistence.js';
 import {setGettext as setMenuGettext} from './lib/dbusMenu.js';
 import {setGettext} from './lib/jumpList.js';
 import {Taskbar} from './lib/panel.js';
+import {RecentDocuments} from './lib/recentDocuments.js';
 import {ShellMenus} from './lib/shellMenus.js';
 import {unwatchShellShutdown, watchShellShutdown} from './lib/shellShutdown.js';
 import {setGettext as setStartGettext} from './lib/startMenu.js';
@@ -51,12 +52,14 @@ export default class Win11TaskbarExtension extends Extension {
         setExtensionSettings(this._settings);
         watchShellShutdown();
         this._taskbars = [];
+        this._recentDocuments = new RecentDocuments();
         this._topPanelHidden = false;
 
         this._monitorsId = Main.layoutManager.connect('monitors-changed',
             () => this._rebuild());
         this._settingsIds = [
-            this._settings.connect('changed::multi-monitor', () => this._rebuild()),
+            ...['multi-monitor', 'start-menu', 'super-opens-start', 'show-system-indicators'].map(key =>
+                this._settings.connect(`changed::${key}`, () => this._rebuild())),
             // Every menu and flyout takes its side from the bar's edge when
             // it is made; a bar on another edge is made afresh.
             this._settings.connect('changed::position', () => this._rebuild()),
@@ -121,6 +124,8 @@ export default class Win11TaskbarExtension extends Extension {
 
         clearAllWindowPeeks();
         this._destroyTaskbars();
+        this._recentDocuments?.destroy();
+        this._recentDocuments = null;
         this._windowMotion?.destroy();
         this._windowMotion = null;
         this._windowAnimations?.destroy();
@@ -163,7 +168,7 @@ export default class Win11TaskbarExtension extends Extension {
             for (const index of indices) {
                 this._taskbars.push(
                     new Taskbar(index, this._settings, this._statusHost,
-                        () => this.openPreferences(), _));
+                        () => this.openPreferences(), _, this._recentDocuments));
             }
 
             return GLib.SOURCE_REMOVE;

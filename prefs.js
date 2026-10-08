@@ -6,6 +6,8 @@ import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {START_SHORTCUTS} from './lib/startOptions.js';
+import {taskbarSizingMode} from './lib/adaptiveLayout.js';
+import {normalizedDirectory, RECOMMENDED_TYPES} from './lib/recommendationPolicy.js';
 
 import {
     ExtensionPreferences, gettext as _,
@@ -14,6 +16,7 @@ import {
 export default class Win11TaskbarPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
+        this._window = window;
         this._cleanup = [];
         this._cancellable = new Gio.Cancellable();
         window.connect('close-request', () => {
@@ -43,6 +46,10 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         placement.add(this._combo(settings, 'position', _('Screen edge'),
             [['bottom', _('Bottom')], ['top', _('Top')], ['left', _('Left')],
              ['right', _('Right')]]));
+        const sizeMode = this._combo(settings, 'taskbar-size-mode', _('Taskbar size mode'),
+            [['auto', _('Automatic — follows logical display size')], ['manual', _('Manual')]],
+            () => taskbarSizingMode(settings));
+        placement.add(sizeMode);
         // How thick the bar is: its height along the top or bottom, its
         // width on a side.
         const sizeRow = new Adw.SpinRow({
@@ -61,6 +68,12 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         const positionId = settings.connect('changed::position', syncSizeTitle);
         this._cleanup.push(() => settings.disconnect(positionId));
         syncSizeTitle();
+        const syncSizeMode = () => { sizeRow.sensitive = taskbarSizingMode(settings) === 'manual'; };
+        for (const key of ['taskbar-size-mode', 'taskbar-size']) {
+            const id = settings.connect(`changed::${key}`, syncSizeMode);
+            this._cleanup.push(() => settings.disconnect(id));
+        }
+        syncSizeMode();
         placement.add(this._combo(settings, 'alignment', _('Task button alignment'),
             [['center', _('Centre (Windows 11)')], ['left', _('Left (Windows 10)')]]));
         placement.add(this._switch(settings, 'auto-hide', _('Automatically hide'),
@@ -102,6 +115,7 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         page.add(parts);
         parts.add(this._switch(settings, 'show-start-button', _('Start button')));
         parts.add(this._combo(settings, 'search-style', _('Search'), [
+            ['auto', _('Automatic — box, label or icon as space allows')],
             ['hidden', _('Hide')],
             ['icon', _('Search icon only')],
             ['icon-label', _('Search icon and label')],
@@ -141,6 +155,7 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
             _('Matches the Windows key. When off, Super opens the Overview.')));
 
         group.add(this._combo(settings, 'start-layout', _('Menu size'), [
+            ['auto', _('Automatic — six or eight columns')],
             ['compact', _('Compact \u2014 six columns')],
             ['wide', _('Wide \u2014 eight columns (Insider)')],
             ['custom', _('Custom size')],
@@ -174,6 +189,7 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         const sizeId = settings.connect('changed::start-layout', syncSize);
         this._cleanup.push(() => settings.disconnect(sizeId));
         syncSize();
+        this._addRecommendations(page, settings);
         const folders = new Adw.PreferencesGroup({
             title: _('Shortcuts beside the power button'),
             description: _('Choose which folders and apps appear in Start. Task Manager remains available in the Win+X menu.'),
@@ -186,6 +202,96 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         }
 
         return page;
+    }
+
+    _addRecommendations(page, settings) {
+        const recommended = new Adw.PreferencesGroup({title: _('Recommended'),
+            description: _('Only local items recorded in the recent-items store are considered. Turning this off gives the space to pinned apps.')});
+        page.add(recommended);
+        recommended.add(this._switch(settings, 'recommended-enabled', _('Show Recommended')));
+        const filters = new Adw.PreferencesGroup({title: _('Recommendation filters'),
+            description: _('Filters apply to Start only, not explicit search or app Jump Lists. Access time comes from the recent-items record, never the disk modification time.')});
+        page.add(filters);
+        settings.bind('recommended-enabled', filters, 'sensitive', Gio.SettingsBindFlags.GET);
+        for (const [key, title] of [['recommended-files', 'Files'], ['recommended-folders', 'Folders'],
+            ['recommended-hidden', 'Include hidden items']])
+            filters.add(this._switch(settings, key, _(title)));
+        for (const [key, title, subtitle, lower, upper] of [
+            ['recommended-days', 'Recent access window (days)', '0 allows any time, including records with an unknown access time.', 0, 3650],
+            ['recommended-limit', 'Maximum recommended items', 'The limit is applied after filtering and sorting.', 1, 100],
+        ]) {
+            const row = new Adw.SpinRow({title: _(title), subtitle: _(subtitle),
+                adjustment: new Gtk.Adjustment({lower, upper, step_increment: 1, page_increment: 7})});
+            settings.bind(key, row, 'value', Gio.SettingsBindFlags.DEFAULT);
+            filters.add(row);
+        }
+        const extensions = new Adw.EntryRow({title: _('Filename extensions (comma-separated; empty allows all)')});
+        const syncExtensions = () => { extensions.text = settings.get_strv('recommended-extensions').join(', '); };
+        syncExtensions();
+        extensions.connect('notify::text', () => {
+            const values = [...new Set(extensions.text.split(/[,;\s]+/).map(value =>
+                value.replace(/^\./, '').toLowerCase()).filter(Boolean))];
+            const valid = values.every(value => /^[a-z0-9][a-z0-9.+_-]*$/.test(value));
+            if (valid) extensions.remove_css_class('error');
+            else extensions.add_css_class('error');
+            if (valid && values.join(',') !== settings.get_strv('recommended-extensions').join(','))
+                settings.set_strv('recommended-extensions', values);
+        });
+        const extId = settings.connect('changed::recommended-extensions', syncExtensions);
+        this._cleanup.push(() => settings.disconnect(extId));
+        filters.add(extensions);
+        const types = new Adw.PreferencesGroup({title: _('File type groups'),
+            description: _('No group selected allows every file type. Selected groups and filename extensions are combined. Folders are controlled separately.')});
+        page.add(types);
+        settings.bind('recommended-enabled', types, 'sensitive', Gio.SettingsBindFlags.GET);
+        for (const [id, title] of RECOMMENDED_TYPES)
+            types.add(this._arraySwitch(settings, 'recommended-types', id, _(title)));
+        for (const [key, title, description] of [
+            ['recommended-include-directories', 'Allowed directories', 'Empty allows all local recent paths; adding a directory does not scan it. Both a symlink path and its target must be allowed.'],
+            ['recommended-exclude-directories', 'Excluded directories', 'Exclusions take priority and include symlink targets and subdirectories.'],
+        ]) {
+            const group = this._directoryGroup(settings, key, _(title), _(description));
+            page.add(group);
+            settings.bind('recommended-enabled', group, 'sensitive', Gio.SettingsBindFlags.GET);
+        }
+    }
+
+    _directoryGroup(settings, key, title, description) {
+        const group = new Adw.PreferencesGroup({title, description});
+        const add = new Adw.ActionRow({title: _('Add directory')});
+        const button = new Gtk.Button({icon_name: 'list-add-symbolic', valign: Gtk.Align.CENTER,
+            tooltip_text: _('Choose a local directory')});
+        add.add_suffix(button);
+        add.activatable_widget = button;
+        group.add(add);
+        button.connect('clicked', () => {
+            const dialog = new Gtk.FileDialog({title: _('Choose a local directory')});
+            dialog.select_folder(this._window, this._cancellable, (source, result) => {
+                try {
+                    const file = source.select_folder_finish(result);
+                    const path = file?.is_native() ? normalizedDirectory(file.get_path()) : null;
+                    if (!path || this._cancellable.is_cancelled()) return;
+                    settings.set_strv(key, [...new Set([...settings.get_strv(key), path])]);
+                } catch { /* 取消目录选择不改变设置。 */ }
+            });
+        });
+        let rows = [];
+        const refresh = () => {
+            rows.forEach(row => group.remove(row));
+            rows = settings.get_strv(key).map(path => {
+                const row = new Adw.ActionRow({title: path});
+                const remove = new Gtk.Button({icon_name: 'list-remove-symbolic', valign: Gtk.Align.CENTER,
+                    tooltip_text: _('Remove directory')});
+                remove.connect('clicked', () => settings.set_strv(key, settings.get_strv(key).filter(value => value !== path)));
+                row.add_suffix(remove);
+                group.add(row);
+                return row;
+            });
+        };
+        const id = settings.connect(`changed::${key}`, refresh);
+        this._cleanup.push(() => settings.disconnect(id));
+        refresh();
+        return group;
     }
 
     _trayPage(settings) {
@@ -289,9 +395,27 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
               + 'the screen, a side or a corner; snap assist then fills the '
               + 'other zones.')));
 
+        const searchKey = new Adw.EntryRow({title: _('Search shortcut (GTK accelerator; empty disables)')});
+        const syncSearchKey = () => { searchKey.text = settings.get_strv('search-key').join(', '); };
+        syncSearchKey();
+        searchKey.connect('notify::text', () => {
+            const values = searchKey.text.split(',').map(value => value.trim()).filter(Boolean);
+            const valid = values.every(value => Gtk.accelerator_parse(value)[0]);
+            if (valid) searchKey.remove_css_class('error');
+            else searchKey.add_css_class('error');
+            if (valid && values.join(',') !== settings.get_strv('search-key').join(',')) settings.set_strv('search-key', values);
+        });
+        const keyId = settings.connect('changed::search-key', syncSearchKey);
+        this._cleanup.push(() => settings.disconnect(keyId));
+        shortcuts.add(searchKey);
+        const snapOwner = new Adw.ActionRow({title: _('Screen-edge owner')});
+        shortcuts.add(snapOwner);
+        this._watchSnapOwner(settings, snapOwner);
+
         const keyList = new Adw.PreferencesGroup({title: _('Also bound')});
         page.add(keyList);
         for (const [combo, what] of [
+            ['Super+S', _('Independent local search (configurable above)')],
             ['Super+X', _('Quick Link menu (also right-click Start)')],
             ['Super+V', _('Clipboard history, at the pointer')],
             ['Super+A', _('Quick settings')],
@@ -442,6 +566,30 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         refresh();
     }
 
+    _watchSnapOwner(settings, row) {
+        const refresh = async () => {
+            if (!settings.get_boolean('snap-layouts')) {
+                row.subtitle = _('Built-in Snap is off; GNOME or another extension owns the edges.');
+                return;
+            }
+            try {
+                const [info] = await this._busCall('org.gnome.Shell.Extensions', '/org/gnome/Shell/Extensions',
+                    'org.gnome.Shell.Extensions', 'GetExtensionInfo', new GLib.Variant('(s)', ['tiling-assistant@ubuntu.com']));
+                if (this._cancellable.is_cancelled()) return;
+                row.subtitle = info.state?.deepUnpack() === 1
+                    ? _('Tiling Assistant owns the edges. Disable it to use Win11 Taskbar Snap; this preference does not disable other extensions.')
+                    : _('Win11 Taskbar Snap owns the edges while enabled; native edge tiling is restored on disable.');
+            } catch {
+                if (!this._cancellable.is_cancelled()) row.subtitle = _('Cannot query the Shell. Win11 Taskbar yields to an active Tiling Assistant.');
+            }
+        };
+        const id = settings.connect('changed::snap-layouts', refresh);
+        const signal = Gio.DBus.session.signal_subscribe('org.gnome.Shell.Extensions', 'org.gnome.Shell.Extensions',
+            'ExtensionStateChanged', '/org/gnome/Shell/Extensions', null, Gio.DBusSignalFlags.NONE, refresh);
+        this._cleanup.push(() => { settings.disconnect(id); Gio.DBus.session.signal_unsubscribe(signal); });
+        refresh();
+    }
+
     _switch(settings, key, title, subtitle = null) {
         const row = new Adw.SwitchRow({title});
         if (subtitle)
@@ -450,16 +598,25 @@ export default class Win11TaskbarPreferences extends ExtensionPreferences {
         return row;
     }
 
-    _combo(settings, key, title, options) {
+    _combo(settings, key, title, options, current = () => settings.get_string(key)) {
         const model = new Gtk.StringList();
         for (const [, label] of options)
             model.append(label);
 
         const row = new Adw.ComboRow({title, model});
         const values = options.map(([value]) => value);
-        row.selected = Math.max(0, values.indexOf(settings.get_string(key)));
-        row.connect('notify::selected',
-            () => settings.set_string(key, values[row.selected]));
+        let syncing = false;
+        const sync = () => {
+            syncing = true;
+            row.selected = Math.max(0, values.indexOf(current()));
+            syncing = false;
+        };
+        sync();
+        row.connect('notify::selected', () => {
+            if (!syncing && values[row.selected]) settings.set_string(key, values[row.selected]);
+        });
+        const id = settings.connect(`changed::${key}`, sync);
+        this._cleanup.push(() => settings.disconnect(id));
         return row;
     }
 }

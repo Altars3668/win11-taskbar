@@ -3,7 +3,7 @@
 
 实测（SEARCH in lib/spec.js）：仅图标是 44×48 的格子、24px 放大镜；图标加文字是 106×48 的
 格子，中间一个 98×32 的胶囊；搜索框是 220×32、离开始和任务视图各 2px，胶囊 216×32 ——
-这里取 224 的格子，胶囊离两边各 4px。隐藏时开始与任务视图相邻。点它打开开始菜单；
+这里取 224 的格子，胶囊离两边各 4px。隐藏时开始与任务视图相邻。点它打开独立搜索；
 任务栏立在侧边时只放得下图标。
 """
 import importlib.util
@@ -122,9 +122,9 @@ def main():
         s = bar()['search']['pill']
         shell.pointer([{'move': [s['x'] + s['w'] // 2, s['y'] + s['h'] // 2]}, {'wait': 120},
                        {'press': 1}, {'wait': 60}, {'release': 1}, {'wait': 500}])
-        check('点搜索打开开始菜单', lambda: bar()['startMenu']['open'])
+        check('点搜索只打开独立搜索面板', lambda: bar()['searchPanel']['open'] and not bar()['startMenu']['open'])
         shell.trigger('keys:' + json.dumps([{'press': 0xff1b}, {'wait': 50}, {'release': 0xff1b}]))
-        check('Esc 收起开始菜单', lambda: not bar()['startMenu']['open'])
+        check('Esc 收起独立搜索面板', lambda: not bar()['searchPanel']['open'])
 
         setting('position', "'left'")
         check('任务栏立在左边：只放得下图标', styled('icon'), timeout=10)

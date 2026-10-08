@@ -23,6 +23,12 @@
     <value value="2" nick="fullscreen"/>
     <value value="3" nick="app-grid"/>
     <value value="4" nick="custom"/>
+    <value value="5" nick="auto"/>
+  </enum>
+
+  <enum id="org.gnome.shell.extensions.win11-taskbar.taskbar-size-mode">
+    <value value="0" nick="auto"/>
+    <value value="1" nick="manual"/>
   </enum>
 
   <enum id="org.gnome.shell.extensions.win11-taskbar.search-style">
@@ -30,6 +36,7 @@
     <value value="1" nick="icon"/>
     <value value="2" nick="icon-label"/>
     <value value="3" nick="box"/>
+    <value value="4" nick="auto"/>
   </enum>
 
   <enum id="org.gnome.shell.extensions.win11-taskbar.tray-hover">
@@ -109,9 +116,9 @@
     </key>
 
     <key name="search-style" enum="org.gnome.shell.extensions.win11-taskbar.search-style">
-      <default>'box'</default>
+      <default>'auto'</default>
       <summary>Search on the taskbar</summary>
-      <description>As Windows offers it: hidden, the search icon only, the icon and its label, or a search box. A bar standing on a side shows only the icon. It opens Start with its search box ready.</description>
+      <description>As Windows offers it: hidden, the search icon only, the icon and its label, or a search box. Automatic chooses a box, label or icon from the remaining space. A bar standing on a side shows only the icon. It opens the independent local search panel, even when Start is off.</description>
     </key>
 
     <key name="show-task-view-button" type="b">
@@ -314,9 +321,9 @@
     </key>
 
     <key name="start-layout" enum="org.gnome.shell.extensions.win11-taskbar.start-layout">
-      <default>'compact'</default>
+      <default>'auto'</default>
       <summary>Start menu layout</summary>
-      <description>Compact six-column layout, the larger eight-column Insider layout, or a size of your own (start-width × start-height).</description>
+      <description>Automatic chooses a six- or eight-column layout from the logical display size. Manual options retain compact, wide, fullscreen, app-grid and custom (start-width × start-height) modes.</description>
     </key>
     <key name="start-width" type="i">
       <range min="480" max="4000"/>
@@ -447,6 +454,63 @@
       <summary>Expose a read-only D-Bus service for geometry tests</summary>
       <description>Used by tools/verify-geometry.py to diff the rendered
       taskbar against the Windows measurements.</description>
+    </key>
+
+    <key name="taskbar-size-mode" enum="org.gnome.shell.extensions.win11-taskbar.taskbar-size-mode">
+      <default>'auto'</default>
+      <summary>Automatic or manual taskbar thickness</summary>
+      <description>Automatic uses 40/48/56 logical pixels according to this monitor. Explicit legacy taskbar-size values remain manual until this mode is chosen.</description>
+    </key>
+    <key name="search-key" type="as">
+      <default><![CDATA[['<Super>s']]]></default>
+      <summary>Open the independent search panel</summary>
+    </key>
+    <key name="recommended-enabled" type="b">
+      <default>true</default>
+      <summary>Show Recommended in Start</summary>
+    </key>
+    <key name="recommended-files" type="b">
+      <default>true</default>
+      <summary>Recommend files</summary>
+    </key>
+    <key name="recommended-folders" type="b">
+      <default>true</default>
+      <summary>Recommend folders</summary>
+    </key>
+    <key name="recommended-hidden" type="b">
+      <default>false</default>
+      <summary>Include hidden recent items</summary>
+    </key>
+    <key name="recommended-include-directories" type="as">
+      <default>[]</default>
+      <summary>Allowed directories for Recommended</summary>
+      <description>Empty means all local XBEL paths; this does not scan any directory. Both original and resolved symlink paths must be allowed.</description>
+    </key>
+    <key name="recommended-exclude-directories" type="as">
+      <default>[]</default>
+      <summary>Directories excluded from Recommended</summary>
+      <description>Exclusions take priority, including symlink targets. Search and Jump Lists are not affected.</description>
+    </key>
+    <key name="recommended-types" type="as">
+      <default>[]</default>
+      <summary>Allowed file type groups</summary>
+      <description>Empty means every group. Folders are controlled separately.</description>
+    </key>
+    <key name="recommended-extensions" type="as">
+      <default>[]</default>
+      <summary>Allowed filename extensions</summary>
+      <description>Empty means any extension; otherwise combined with the type groups. Case insensitive, with or without a leading dot.</description>
+    </key>
+    <key name="recommended-days" type="i">
+      <range min="0" max="3650"/>
+      <default>30</default>
+      <summary>Recent access window in days</summary>
+      <description>0 means any time. Unknown access times only appear with 0; disk modification time is not used.</description>
+    </key>
+    <key name="recommended-limit" type="i">
+      <range min="1" max="100"/>
+      <default>5</default>
+      <summary>Maximum Recommended entries after filtering</summary>
     </key>
 
     <key name="jumplist-recent" type="b">

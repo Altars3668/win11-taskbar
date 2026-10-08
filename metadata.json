@@ -1,11 +1,11 @@
 {
   "uuid": "win11-taskbar@altarscn.com",
   "name": "Windows 11 Taskbar",
-  "description": "A Windows 11-style taskbar for GNOME Shell: Start menu, configurable search, live window previews, system tray, combined system controls, quick settings and snap layouts. Layout and interaction timings are based on Windows measurements.",
+  "description": "A Windows 11-style taskbar for GNOME Shell: adaptive layout, Start menu, independent local search, filtered recommendations, live window previews, system tray, combined system controls, quick settings and snap layouts. Layout and interaction timings are based on Windows measurements.",
   "shell-version": ["50"],
   "url": "https://github.com/Altars3668/win11-taskbar",
   "settings-schema": "org.gnome.shell.extensions.win11-taskbar",
   "gettext-domain": "win11-taskbar",
-  "version": 1,
-  "version-name": "0.1.0"
+  "version": 2,
+  "version-name": "0.2.0"
 }

@@ -1,12 +1,12 @@
 # Behavior and measurement notes
 
-[English README](../README.md) · [简体中文说明](../README.zh-CN.md) · [Development](development.md)
+[English README](../README.en.md) · [简体中文说明](../README.md) · [Development](development.md)
 
 The extension reproduces selected Windows 11 interactions while preserving GNOME's application and service model. The reference machine ran Windows 11 Insider build 29671 at 1920×1080 and 100% scale. Exact measurements and collection limits are in [windows-spec.md](windows-spec.md).
 
 ## Layout and task buttons
 
-The application strip is centered on the screen midpoint, not the remaining space between widgets and the tray. A setting changes it to left alignment. The default bar is 48 logical pixels thick; application buttons are 44×48, their icons 24×24.
+The application strip is centered on the screen midpoint, not the remaining space between widgets and the tray. A setting changes it to left alignment. The reference bar is 48 logical pixels thick; application buttons are 44×48, their icons 24×24. Automatic sizing uses 40px on logical displays with a shortest edge of at most 800px, 56px when the shortest edge is at least 1300px and the longest at least 2400px, and 48px otherwise. These thresholds are project policy, not Windows measurements. Saved manual thickness stays manual until an explicit mode change. Search reduces first when space is scarce; excessive app buttons live in a bounded scroll view with wheel and keyboard reveal.
 
 A running but unfocused application has a 6px gray indicator. The focused application's indicator grows to 18px, uses the accent color, and sits 5px above the bar's lower edge. These metrics are collected in [`lib/spec.js`](../lib/spec.js) and checked against real rendered actors.
 
@@ -15,6 +15,8 @@ The bar can occupy any screen edge, including upright left/right layouts not off
 ## Previews and jump lists
 
 Resting the pointer on a task button opens live window thumbnails after 400ms, the reference machine's `MouseHoverTime`. Hovering a thumbnail dims other windows for Aero Peek. Clicking activates the window; the close button and middle-click close it.
+
+Desktop and thumbnail Peek share one opacity owner. The first stable original opacity is retained, the last owner restores it, and mapping/minimizing/restoring values are not saved as permanent baselines. Peek only handles opacity and does not cancel native position/scale transitions; teardown releases owners and timers.
 
 Right-click opens the application's jump list: recent documents, desktop-file actions, a new-instance entry, pin/unpin and close actions. Recent documents come from the user's `recently-used.xbel` rather than importing GTK into the Shell process.
 
@@ -26,7 +28,7 @@ The extension implements a StatusNotifierItem host and owns `org.kde.StatusNotif
 
 Tray glyphs are 16×16 inside 32×48 cells. DBusMenu context menus, scrolling and middle-click are forwarded to the originating application. Individual icons can be placed in an overflow panel. Its chevron turns half a turn as the panel opens and back when it closes, in approximately 210ms.
 
-Network, volume and battery share **one** hover and pressed surface. Every glyph opens the same quick-settings panel. The native indicators retain their original event behavior; they are not converted into separate hover buttons. When there is no battery, GNOME's substitute power-off icon is hidden. Power actions remain in Start and Quick Link.
+Network, volume and battery share **one** hover and pressed surface. Every glyph opens the same quick-settings panel. The native indicators retain their original event behavior; they are not converted into separate hover buttons. When there is no battery, GNOME's substitute power-off icon is hidden. Power actions remain in Start and Quick Link. Healthy `network-wired-symbolic` connections use the native `computer-symbolic` glyph; acquiring, disconnected, no-route, wireless and VPN glyphs stay unchanged, and disable restores the latest original icon.
 
 The show-desktop control keeps a 12px-wide end region. Its separator is drawn by an independent, non-reactive actor rather than relying on a single CSS border on `St.Button`. The 1px line is inset by 8px at both ends and turns horizontal for upright bars. Clicking toggles minimizing/restoring windows; resting the pointer offers desktop peek.
 
@@ -34,9 +36,9 @@ The show-desktop control keeps a 12px-wide end region. Its separator is drawn by
 
 Start contains its own pinned applications, recent documents, All Apps, account actions, selectable folder shortcuts and power actions. Its pin list is distinct from the taskbar's favorites.
 
-The default compact layout uses six columns within a 640×720 panel, bounded by the monitor's work area. An eight-column option preserves the earlier 832×864 Insider measurement. A custom size changes the number of columns and rows. These layouts are not claimed to match every released Windows Start menu.
+The default automatic layout uses six columns within a 640×720 panel, or eight columns when logical available space reaches 2400×1200. The menu stays inside the room beside the bar, reduces columns/rows on small screens, scrolls pins and preserves the footer. An eight-column option preserves the earlier 832×864 Insider measurement. A custom size changes the number of columns and rows. These layouts are not claimed to match every released Windows Start menu.
 
-The taskbar search control has four styles:
+The taskbar search control defaults to automatic: choose the widest of the three visible styles that fits the remaining space, with a 16px allowance. It also retains these four manual styles:
 
 | Style | Default-size geometry |
 | --- | --- |
@@ -45,7 +47,11 @@ The taskbar search control has four styles:
 | Icon and label | 106×48 cell, centered 98×32 pill |
 | Search box | 224×48 cell, 216×32 pill |
 
-The box does not include Windows' daily search-highlight picture. A click opens Start with keyboard focus in its search field. If the extension's Start menu is off, it opens GNOME search. Upright taskbars display only the icon, unless search is hidden.
+The box does not include Windows' daily search-highlight picture. A click or configurable `Super+S` opens an independent local search panel, even with Start disabled. It shares app matching, activation and ordering with Start; scopes are apps, recent files and recent folders, with no full-disk scan, web search or query history. Escape, outside-press delivery, arrow navigation and Enter activation are supported; launch panels are mutually exclusive across monitors. Upright taskbars display only the icon, unless search is hidden.
+
+Start's Recommended section has separate file/folder switches, include/exclude directory lists, file type groups, extension filters, a recent-access window and a post-filter count limit. Exclusions win and cover lexical and resolved symlink paths. Unknown timestamps appear only with a zero-day/unlimited window; disk modification time is not used. Hidden paths are excluded by default. Empty allowlists mean no restriction. Turning Recommended off returns the space to pins without removing the footer. Its rules do not affect explicit search or Jump Lists.
+
+One `RecentDocuments` provider per extension instance shares an asynchronous Gio snapshot between all monitors, Start, search and Jump Lists. GLib validates/parses XBEL; raw recorded timestamps are retained because GLib fills missing timestamps with the current time. The 30-second cache validates at most 500 newest recorded local entries with six workers and a five-second cancellation deadline. Non-local URIs, disappeared files, broken links and inaccessible paths are skipped. Directory allowlists do not trigger scans; MIME types fall back to Gio and then extension groups.
 
 ## Quick settings and notifications
 
@@ -67,7 +73,7 @@ Normal windows and dialogs receive rounded corners, an edge and a measured shado
 
 GTK title-bar styling is **off by default**. Turning it on writes a marked, removable block to GTK 3/4 user CSS and saves the GNOME window-button layout. Existing applications usually need restarting. Unrelated CSS is preserved. Lock-screen extension suspension does not rewrite the user's files.
 
-Mica is a second, separately enabled option requiring the GTK title-bar style. It shows a heavily blurred and tinted wallpaper, not the windows underneath. Application content overlays remain opaque where appropriate. GTK 3 does not expose the per-application dark-theme distinction to these styles; its tint strength uses the light setting. See [`lib/windowMica.js`](../lib/windowMica.js) for the implementation and [`lib/gtkWindowStyle.js`](../lib/gtkWindowStyle.js) for the CSS.
+Mica is a second, separately enabled option requiring the GTK title-bar style. It shows a heavily blurred and tinted wallpaper, not the windows underneath. Application content overlays remain opaque where appropriate. GTK 3 does not expose the per-application dark-theme distinction to these styles; its tint strength uses the light setting. Known browser, Electron and Qt renderers are excluded from Mica even if their process loads GTK. GTK 4 maximized title bars remove the extension-controlled padding and window-control margins; Chromium's custom button spacing remains a client boundary, not something hidden by cropping windows. See [`lib/windowMica.js`](../lib/windowMica.js) for the implementation and [`lib/gtkWindowStyle.js`](../lib/gtkWindowStyle.js) for the CSS.
 
 ## Snap layouts and assist
 

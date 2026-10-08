@@ -29,7 +29,7 @@ GNOME = [('org.gnome.shell.keybindings', 'toggle-message-tray'),
          ('org.gnome.shell.keybindings', 'focus-active-notification')]
 GNOME += [('org.gnome.shell.keybindings', f'switch-to-application-{i}') for i in range(1, 10)]
 SUPER, ESC = 0xffeb, 0xff1b
-COMBOS = {'clipboard': 0x76, 'quickSettings': 0x61, 'notifications': 0x6e, 'quickLinks': 0x78}
+COMBOS = {'clipboard': 0x76, 'quickSettings': 0x61, 'notifications': 0x6e, 'quickLinks': 0x78, 'search': 0x73}
 
 
 def env(bus=None):
