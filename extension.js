@@ -27,6 +27,7 @@ import {WindowAnimations} from './lib/windowAnimations.js';
 import {WindowFrames} from './lib/windowFrames.js';
 import {WindowMica} from './lib/windowMica.js';
 import {WindowMotion} from './lib/windowMotion.js';
+import {clearAllWindowPeeks} from './lib/windowPeek.js';
 import {setGettext as setTrayGettext} from './lib/trayArea.js';
 import {setGettext as setEditorGettext} from './lib/quickSettingsEditor.js';
 import {setGettext as setLinksGettext} from './lib/quickLinks.js';
@@ -118,6 +119,7 @@ export default class Win11TaskbarExtension extends Extension {
         this._shellMenus?.destroy();
         this._shellMenus = null;
 
+        clearAllWindowPeeks();
         this._destroyTaskbars();
         this._windowMotion?.destroy();
         this._windowMotion = null;

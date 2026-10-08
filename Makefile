@@ -34,6 +34,7 @@ check:
 	node tools/test-semantics.mjs
 	node tools/test-layout-options.mjs
 	node tools/test-ui-lifecycle.mjs
+	node tools/test-peek-state.mjs
 	glib-compile-schemas --strict --dry-run schemas/
 	gjs -m tools/test-application-order.js
 
